@@ -110,10 +110,22 @@ Other commands:
 
 ```bash
 npm test       # run the unit tests
+npm run e2e    # run the browser tests (needs Google Chrome installed)
 npm run lint   # check the code with ESLint
 npm run build  # type-check and build into dist/
 npm run srd    # re-download the SRD data into src/data/srd/
 ```
+
+## Known limitations
+
+- **Encounter difficulty tables** (2014 XP thresholds and multipliers, 2024 XP budgets) were entered by hand in `src/lib/encounters.ts`, because they aren't in the SRD data source. Check them against your books.
+- **Quick rules** (`src/data/quickRules.ts`) are a hand-written summary, not official text. The 2024 data has no full rules sections, so only the quick rules show in 2024 mode.
+- **Loot tables** are simplified, not the official treasure tables. Magic items come from the SRD.
+- **Missing source text:** five 2024 entries end mid-sentence in the 5e-database data and can't be rebuilt from it: *Vampire Weakness* (Vampire Spawn and the three Vampire forms) and the Sphinx of Valor's *Roar*.
+- **Legendary actions** default to 3 per round, because the data doesn't record the number; change it per monster with − / + in the actions panel.
+- **Spells without damage data** (e.g. Hold Person, Counterspell) show their text only in the actions panel; there's nothing to roll.
+- **Extra damage tick boxes** use a text rule to guess whether an extra damage part is conditional (e.g. "if the attack roll had Advantage"). Check the ticks on unusual monsters.
+- **Data lives in this browser only.** Clearing site data deletes it, so use **Export all** on the home page for backups.
 
 ## Legal
 

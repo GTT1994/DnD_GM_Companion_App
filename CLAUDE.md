@@ -9,6 +9,7 @@ A DnD 5e companion app for Game Masters, for personal use on a laptop. See [READ
 - `npm run dev`: start the dev server at http://localhost:5173
 - `npm run lint`: run ESLint
 - `npm test`: run the Vitest unit tests
+- `npm run e2e`: browser tests (`e2e/flows/`) in headless Google Chrome via playwright-core; starts its own dev server. `npm run e2e -- homebrew` runs one flow, `SHOW=1` shows the browser. Screenshots go to `e2e/screenshots/`. Run after any UI change, and add or extend a flow for new features
 - `npm run build`: type-check and build into `dist/`
 - `npm run srd`: re-download and rebuild the SRD data in `src/data/srd/`
 
