@@ -60,7 +60,12 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 
 ## Getting Started
 
-Setup instructions will be added once development begins.
+Requires [Node.js](https://nodejs.org/) 20.19 or later.
+
+```bash
+npm install    # install dependencies
+npm run dev    # start the dev server at http://localhost:5173
+```
 
 ## Legal
 
