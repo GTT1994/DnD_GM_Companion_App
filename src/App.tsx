@@ -1,62 +1,114 @@
-// The main app component. Currently shows the combat tracker table.
+// The main app component: the header (page tabs, edition switch) and whichever page is open.
+// It owns the state that more than one page needs: the combat and Quick Lookup state.
 
-import { useState } from 'react'
-import { CombatantRow } from './components/CombatantRow'
-import type { Combatant } from './types'
+import { useEffect, useRef } from 'react'
+import type { Combatant, Edition, LookupCategory, LookupState, Page } from './types'
+import type { Monster } from './data/srd'
+import { combatReducer, emptyCombat, uniqueName } from './lib/combat'
+import { abilityMod, rollDie } from './lib/dice'
+import { useSavedReducer, useSavedState } from './lib/storage'
+import { CombatTracker } from './components/CombatTracker'
+import { Lookup } from './components/Lookup'
+import { Generators } from './components/Generators'
 
-// Sample initial combatants used until combatants can be added in the app.
-const initialCombatants: Combatant[] = [
-  { id: '1', name: 'Thorin', hp: 34, maxHp: 34, ac: 18, initiative: 15, isPlayer: true },
-  { id: '2', name: 'Jazz', hp: 20, maxHp: 39, ac: 14, initiative: 11, isPlayer: true },
-  { id: '3', name: 'Astor', hp: 18, maxHp: 27, ac: 12, initiative: 19, isPlayer: true },
-  { id: '4', name: 'Lucien', hp: 100, maxHp: 100, ac: 18, initiative: 19, isPlayer: false },
+const PAGES: { page: Page; label: string }[] = [
+  { page: 'combat', label: 'Combat' },
+  { page: 'lookup', label: 'Quick Lookup' },
+  { page: 'generators', label: 'Generators' },
 ]
 
 function App() {
+  // All of these are saved in the browser, so a refresh doesn't lose anything.
+  const [page, setPage] = useSavedState<Page>('page', 'combat')
+  const [edition, setEdition] = useSavedState<Edition>('edition', '2024')
+  const [combat, dispatch] = useSavedReducer('combat', combatReducer, emptyCombat)
+  const [lookup, setLookup] = useSavedState<LookupState>('lookup', { category: 'monsters', query: '', selected: null })
+  const searchRef = useRef<HTMLInputElement>(null)
 
-  // useState returns a pair: the current value of combatants, and a function to update it.
-  const [combatants, setCombatants] = useState(initialCombatants)
+  // ⌘K (or Ctrl+K) jumps to Quick Lookup and puts the cursor in the search box from anywhere.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPage('lookup')
+        // Wait a moment for the Lookup page to appear before focusing.
+        setTimeout(() => searchRef.current?.select())
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [setPage])
 
-  // Changes one combatant's HP by `amount` (negative = damage, positive = healing).
-  // Builds a new array rather than editing the old one, so React knows to redraw.
-  function changeHp(id: string, amount: number) {
-    setCombatants(
-      combatants.map((c) =>
-        // Update hp, but keep it between 0 and maxHp. Spread operator copies all other fields unchanged.
-        c.id === id ? { ...c, hp: Math.min(c.maxHp, Math.max(0, c.hp + amount)) } : c
-      )
-    )
+  // Adds SRD monsters to combat, each rolling its own initiative (d20 + Dex modifier).
+  function addMonster(monster: Monster, count: number) {
+    const added: Combatant[] = []
+    for (let i = 0; i < count; i++) {
+      added.push({
+        id: crypto.randomUUID(),
+        name: uniqueName(monster.name, [...combat.combatants, ...added]),
+        initiative: rollDie(20) + abilityMod(monster.abilities[1]),
+        hp: monster.hp,
+        maxHp: monster.hp,
+        tempHp: 0,
+        ac: monster.ac,
+        isPlayer: false,
+        conditions: [],
+        monster: { edition, index: monster.index },
+      })
+    }
+    dispatch({ type: 'add', combatants: added })
   }
 
-  // Removes a combatant from the list by filtering it out of the array.
-  function removeCombatant(id: string) {
-    setCombatants(combatants.filter((c) => c.id !== id))
+  // Opens a specific entry in Quick Lookup (used by the tracker and the loot generator).
+  function openInLookup(category: LookupCategory, index: string) {
+    setLookup({ ...lookup, category, selected: { category, index } })
+    setPage('lookup')
   }
-
 
   return (
-    <main>
-      <h1>Combat Tracker</h1>
-      <table>
-        {/* Column headings. Their order must match the cells in CombatantRow. */}
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Init</th>
-            <th>HP</th>
-            <th>AC</th>
-            <th>Type</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {/* One row per combatant, like SELECT ... FROM combatants. key = the row's unique ID. */}
-          {combatants.map((combatant) => (
-            <CombatantRow key={combatant.id} combatant={combatant} onHpChange={changeHp} onRemove={removeCombatant} />
+    <div className="app">
+      <header className="app-header">
+        <h1>GM Companion</h1>
+        <nav className="page-tabs">
+          {PAGES.map((p) => (
+            <button key={p.page} type="button" className={page === p.page ? 'selected' : ''} onClick={() => setPage(p.page)}>
+              {p.label}
+            </button>
           ))}
-        </tbody>
-      </table>
-    </main>
+        </nav>
+        {/* Switches which edition's rules data is shown */}
+        <div className="edition-switch" role="group" aria-label="Rules edition">
+          {(['2014', '2024'] as const).map((e) => (
+            <button key={e} type="button" className={edition === e ? 'selected' : ''} onClick={() => setEdition(e)}>
+              {e}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <main>
+        {page === 'combat' && (
+          <CombatTracker
+            combat={combat}
+            dispatch={dispatch}
+            edition={edition}
+            onOpenMonster={(monsterEdition, index) => {
+              setEdition(monsterEdition)  // show the stat block from the edition it was added from
+              openInLookup('monsters', index)
+            }}
+          />
+        )}
+        {page === 'lookup' && (
+          <Lookup edition={edition} state={lookup} setState={setLookup} searchRef={searchRef} onAddMonster={addMonster} />
+        )}
+        {page === 'generators' && <Generators edition={edition} onOpenItem={(index) => openInLookup('magic-items', index)} />}
+      </main>
+
+      <footer className="app-footer">
+        Rules content from the System Reference Document 5.1 and 5.2 by Wizards of the Coast LLC, licensed under CC-BY-4.0.
+        Data via <a href="https://github.com/5e-bits/5e-database" target="_blank" rel="noreferrer">5e-database</a>.
+      </footer>
+    </div>
   )
 }
 

@@ -1,33 +1,118 @@
-// Displays one combatant as a row in the combat tracker table.
+// Displays one combatant as a row in the combat tracker table, with controls for
+// initiative, HP, conditions and removing them.
 
+import { useState, type Dispatch } from 'react'
 import type { Combatant } from '../types'
+import type { CombatAction } from '../lib/combat'
 
-// The props (inputs) this component accepts.
 type CombatantRowProps = {
   combatant: Combatant
-  // Function from App to call when this combatant's HP changes.
-  onHpChange: (id: string, amount: number) => void
-  // Function from App to call when this combatant is removed.
-  onRemove: (id: string) => void
+  isActive: boolean                     // true when it's this combatant's turn
+  conditionNames: string[]              // conditions that can be added
+  conditionHelp: Record<string, string> // short description of each condition, shown on hover
+  dispatch: Dispatch<CombatAction>      // sends changes to the tracker
+  onOpenMonster: () => void             // opens this monster's stat block (only used for SRD monsters)
 }
 
-export function CombatantRow({ combatant, onHpChange, onRemove }: CombatantRowProps) {
+export function CombatantRow({ combatant: c, isActive, conditionNames, conditionHelp, dispatch, onOpenMonster }: CombatantRowProps) {
+  // The text in the HP amount box, used by the Damage / Heal / Temp buttons.
+  const [amount, setAmount] = useState('')
+  const value = parseInt(amount)
+
+  // Runs a HP action with the amount in the box, then clears the box.
+  function applyAmount(type: 'damage' | 'heal' | 'setTempHp') {
+    if (Number.isNaN(value)) return
+    dispatch({ type, id: c.id, amount: value })
+    setAmount('')
+  }
+
+  // Saves a new initiative typed into the box.
+  function commitInitiative(text: string) {
+    const initiative = parseInt(text)
+    if (!Number.isNaN(initiative) && initiative !== c.initiative) dispatch({ type: 'setInitiative', id: c.id, initiative })
+  }
+
+  const hpPercent = Math.round((c.hp / c.maxHp) * 100)
+  const classes = ['combatant', isActive && 'active', c.hp === 0 && 'down', c.isPlayer ? 'player' : 'monster']
+
   return (
-    <tr>
-      <td>{combatant.name}</td>
-      <td>{combatant.initiative}</td>
-      {/* Current HP out of max HP, with buttons to lower or raise it by 1 */}
+    <tr className={classes.filter(Boolean).join(' ')}>
+      <td className="turn-marker">{isActive ? '▶' : ''}</td>
       <td>
-        <button onClick={() => onHpChange(combatant.id, -1)}>-</button>
-        {combatant.hp} / {combatant.maxHp}
-        <button onClick={() => onHpChange(combatant.id, 1)}>+</button>
+        {/* Uncontrolled box: "key" resets it when the initiative changes elsewhere */}
+        <input
+          key={c.initiative}
+          type="number"
+          className="init-input"
+          defaultValue={c.initiative}
+          aria-label={`Initiative for ${c.name}`}
+          onBlur={(e) => commitInitiative(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+        />
       </td>
-      <td>{combatant.ac}</td>
-      {/* Ternary works like CASE WHEN: show "Player" if isPlayer is true, otherwise "Monster" */}
-      <td>{combatant.isPlayer ? 'Player' : 'Monster'}</td>
+      <td className="name-cell">
+        {c.monster ? (
+          <button type="button" className="link" onClick={onOpenMonster} title="Show stat block">{c.name}</button>
+        ) : (
+          c.name
+        )}
+        <span className="tag">{c.isPlayer ? 'PC' : 'NPC'}</span>
+      </td>
+      <td className="ac">{c.ac}</td>
+      <td className="hp-cell">
+        <div className="hp-text">
+          <strong>{c.hp}</strong> / {c.maxHp}
+          {c.tempHp > 0 && <span className="temp-hp"> +{c.tempHp} temp</span>}
+          {c.hp === 0 && <span className="down-label"> Down</span>}
+        </div>
+        {/* Bar coloured by how hurt the combatant is */}
+        <div className="hp-bar">
+          <div className={`hp-fill ${hpPercent <= 25 ? 'low' : hpPercent <= 50 ? 'mid' : ''}`} style={{ width: `${hpPercent}%` }} />
+        </div>
+      </td>
       <td>
-        {/* Button to remove this combatant from the list. Calls the function passed in from App. */}
-        <button onClick={() => onRemove(combatant.id)}>Remove</button>
+        <div className="conditions">
+          {/* Each condition chip removes itself when clicked */}
+          {c.conditions.map((name) => (
+            <button
+              key={name}
+              type="button"
+              className="chip"
+              title={`${conditionHelp[name] ?? name}\n\nClick to remove`}
+              onClick={() => dispatch({ type: 'toggleCondition', id: c.id, condition: name })}
+            >
+              {name} ✕
+            </button>
+          ))}
+          <select
+            className="condition-select"
+            value=""
+            aria-label={`Add condition to ${c.name}`}
+            onChange={(e) => dispatch({ type: 'toggleCondition', id: c.id, condition: e.target.value })}
+          >
+            <option value="">+ Condition</option>
+            {conditionNames
+              .filter((name) => !c.conditions.includes(name))
+              .map((name) => <option key={name}>{name}</option>)}
+          </select>
+        </div>
+      </td>
+      <td className="actions-cell">
+        <input
+          type="number"
+          min={0}
+          className="amount-input"
+          placeholder="HP"
+          value={amount}
+          aria-label={`HP amount for ${c.name}`}
+          onChange={(e) => setAmount(e.target.value)}
+          // Enter applies damage, the most common action
+          onKeyDown={(e) => e.key === 'Enter' && applyAmount('damage')}
+        />
+        <button type="button" className="damage" onClick={() => applyAmount('damage')} title="Take damage (temp HP first)">Dmg</button>
+        <button type="button" className="heal" onClick={() => applyAmount('heal')} title="Heal (up to max HP)">Heal</button>
+        <button type="button" onClick={() => applyAmount('setTempHp')} title="Set temporary HP">Temp</button>
+        <button type="button" className="remove" onClick={() => dispatch({ type: 'remove', id: c.id })} title="Remove from combat" aria-label={`Remove ${c.name}`}>✕</button>
       </td>
     </tr>
   )
