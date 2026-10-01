@@ -3,7 +3,7 @@
 // first, then any indexed columns (other columns don't need declaring).
 
 import Dexie, { type Table } from 'dexie'
-import type { Campaign, CombatState, Edition, Note, Pc } from './types'
+import type { Campaign, CombatState, Edition, Encounter, Note, Pc } from './types'
 import type { Npc } from './lib/generators'
 import type { Monster, Spell } from './data/srd'
 
@@ -41,6 +41,7 @@ class GmDatabase extends Dexie {
   notes!: Table<Note, string>
   homebrewMonsters!: Table<HomebrewMonster, string>
   homebrewSpells!: Table<HomebrewSpell, string>
+  encounters!: Table<Encounter, string>
 
   constructor() {
     super('gm-companion')
@@ -56,6 +57,10 @@ class GmDatabase extends Dexie {
     this.version(2).stores({
       homebrewMonsters: 'index, name',
       homebrewSpells: 'index, name',
+    })
+    // Version 3 adds prepared encounters, linked to a campaign.
+    this.version(3).stores({
+      encounters: 'id, campaignId',
     })
   }
 }

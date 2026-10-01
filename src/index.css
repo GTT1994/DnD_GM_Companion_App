@@ -1059,6 +1059,97 @@ label.invalid input { border-color: var(--red); }
 .scaling-preview { margin-top: 0.75rem; }
 .scaling-preview strong { color: var(--gold); }
 
+/* --- Encounters ------------------------------------------------------------ */
+
+.mode-switch.compact { margin: 0; }
+.mode-switch.compact button { flex: none; padding: 0.35em 0.8em; }
+
+.tag.status-planned { color: var(--gold); border-color: var(--gold); }
+.tag.status-used { color: var(--text-dim); }
+
+.encounter-monster {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.encounter-monster-name { flex: 1; }
+.encounter-monster-name .meta { font-size: 0.85rem; }
+
+.counter { display: inline-flex; align-items: center; gap: 0.5rem; }
+.counter strong { min-width: 1.5em; text-align: center; }
+
+.monster-picker { margin-top: 0.75rem; }
+.monster-picker input { width: 100%; }
+.monster-picker .results { margin-top: 0.3rem; }
+
+.difficulty-rating {
+  font-family: var(--heading);
+  font-size: 1.6rem;
+  color: var(--gold-bright);
+}
+
+.rating-trivial, .rating-none, .rating-easy, .rating-low { color: var(--green); }
+.rating-medium, .rating-moderate { color: var(--amber); }
+.rating-hard, .rating-high { color: #e0703c; }
+.rating-deadly, .rating-beyond-high { color: var(--red); }
+
+.difficulty-bar {
+  position: relative;
+  height: 0.75rem;
+  margin: 0.5rem 0 1.75rem;
+  border-radius: 999px;
+  background: var(--panel-raised);
+}
+
+.difficulty-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--green), var(--amber), var(--red));
+}
+
+.difficulty-marker {
+  position: absolute;
+  top: -0.2rem;
+  height: 1.15rem;
+  border-left: 2px solid var(--text);
+}
+
+.difficulty-marker span {
+  position: absolute;
+  top: 1.25rem;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.small-print { font-size: 0.75rem; }
+
+.party-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.party-picker .meta { width: 100%; margin: 0; }
+
+.load-encounter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.load-choice { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.load-choice p { width: 100%; margin: 0; }
+
 /* --- Smaller screens ----------------------------------------------------- */
 
 @media (max-width: 900px) {

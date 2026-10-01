@@ -70,7 +70,9 @@ describe('campaigns', () => {
   it('deletes a campaign and everything linked to it', async () => {
     const { campaignId } = await campaignWithThorinInFight()
     await db.notes.put({ campaignId, text: 'secret', updatedAt: 0 })
+    await db.encounters.add({ id: 'e1', campaignId, name: 'Ambush', notes: '', status: 'planned', hpMode: 'average', monsters: [], updatedAt: 0 })
     await deleteCampaign(campaignId)
+    expect(await db.encounters.count()).toBe(0)
     expect(await db.campaigns.count()).toBe(0)
     expect(await db.pcs.count()).toBe(0)
     expect(await db.combats.count()).toBe(0)
@@ -82,6 +84,7 @@ describe('backups', () => {
   it('imports a campaign as a new copy with its links intact', async () => {
     const { campaignId } = await campaignWithThorinInFight()
     await db.notes.put({ campaignId, text: 'The butler did it', updatedAt: 0 })
+    await db.encounters.add({ id: 'e1', campaignId, name: 'Ambush', notes: '', status: 'planned', hpMode: 'average', monsters: [], updatedAt: 0 })
     // Round-trip through JSON text, as a real file would.
     const file = JSON.parse(JSON.stringify(await exportCampaigns([campaignId])))
 
@@ -92,6 +95,7 @@ describe('backups', () => {
     expect(copy.name).toBe('Curse of the Test')
     expect(copyCombat.combatants[0].pcId).toBe(copyPc?.id)  // points at the copied PC, not the original
     expect((await db.notes.get(copy.id))?.text).toBe('The butler did it')
+    expect((await db.encounters.where('campaignId').equals(copy.id).first())?.name).toBe('Ambush')
   })
 
   it('imports homebrew as copies and re-links spells and fights to them', async () => {

@@ -28,8 +28,9 @@ export function touchCampaign(id: string) {
 
 // Deletes a campaign and everything that belongs to it, like ON DELETE CASCADE.
 export function deleteCampaign(id: string) {
-  return db.transaction('rw', [db.campaigns, db.pcs, db.combats, db.npcs, db.notes], async () => {
+  return db.transaction('rw', [db.campaigns, db.pcs, db.combats, db.npcs, db.notes, db.encounters], async () => {
     await db.pcs.where('campaignId').equals(id).delete()
+    await db.encounters.where('campaignId').equals(id).delete()
     await db.npcs.where('campaignId').equals(id).delete()
     await db.combats.delete(id)
     await db.notes.delete(id)

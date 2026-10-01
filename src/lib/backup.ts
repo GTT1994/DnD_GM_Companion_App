@@ -2,7 +2,7 @@
 // A backup is a JSON file holding each campaign plus everything linked to it, and/or homebrew.
 
 import { db, QUICK_COMBAT, type HomebrewMonster, type HomebrewSpell, type SavedCombat, type SavedNpc } from '../db'
-import type { Campaign, Note, Pc } from '../types'
+import type { Campaign, Encounter, Note, Pc } from '../types'
 
 const APP = 'gm-companion'
 const VERSION = 1
@@ -13,6 +13,7 @@ type CampaignBackup = {
   combat: SavedCombat | null
   npcs: SavedNpc[]
   notes: Note | null
+  encounters?: Encounter[]  // missing in backups made before encounters existed
 }
 
 export type Backup = {
@@ -36,6 +37,7 @@ export async function exportCampaigns(ids?: string[]): Promise<Backup> {
       combat: (await db.combats.get(campaign.id)) ?? null,
       npcs: await db.npcs.where('campaignId').equals(campaign.id).toArray(),
       notes: (await db.notes.get(campaign.id)) ?? null,
+      encounters: await db.encounters.where('campaignId').equals(campaign.id).toArray(),
     })
   }
   const backup: Backup = { app: APP, version: VERSION, exportedAt: new Date().toISOString(), campaigns: entries }
@@ -44,7 +46,10 @@ export async function exportCampaigns(ids?: string[]): Promise<Backup> {
   if (!ids) {
     backup.homebrew = await homebrewEntries()
   } else {
-    const monsterIndexes = entries.flatMap((e) => e.combat?.combatants.map((c) => c.monster?.index) ?? []).filter((i) => i?.startsWith('hb-'))
+    // Homebrew monsters in the campaign's fight or its encounters.
+    const monsterIndexes = entries
+      .flatMap((e) => [...(e.combat?.combatants.map((c) => c.monster?.index) ?? []), ...(e.encounters ?? []).flatMap((enc) => enc.monsters.map((m) => m.index))])
+      .filter((i) => i?.startsWith('hb-'))
     const monsters = (await db.homebrewMonsters.bulkGet(monsterIndexes as string[])).filter((m) => m !== undefined)
     const spellIndexes = monsters.flatMap((m) => spellIndexesOf(m)).filter((i) => i.startsWith('hb-'))
     const spells = (await db.homebrewSpells.bulkGet(spellIndexes)).filter((s) => s !== undefined)
@@ -81,7 +86,7 @@ export async function importCampaigns(data: unknown): Promise<ImportResult> {
   if (backup?.app !== APP || !Array.isArray(backup.campaigns)) throw new Error('This file is not a GM Companion backup.')
   if (backup.version > VERSION) throw new Error('This backup was made by a newer version of the app.')
 
-  const tables = [db.campaigns, db.pcs, db.combats, db.npcs, db.notes, db.homebrewMonsters, db.homebrewSpells]
+  const tables = [db.campaigns, db.pcs, db.combats, db.npcs, db.notes, db.homebrewMonsters, db.homebrewSpells, db.encounters]
   const result: ImportResult = { campaigns: backup.campaigns.length, monsters: 0, spells: 0 }
   await db.transaction('rw', tables, async () => {
     // For each homebrew entry in the file: unchanged ones already here are skipped; ones missing here
@@ -129,6 +134,12 @@ export async function importCampaigns(data: unknown): Promise<ImportResult> {
       await db.pcs.bulkAdd(entry.pcs.map((pc) => ({ ...pc, id: pcIds.get(pc.id)!, campaignId })))
       await db.npcs.bulkAdd(entry.npcs.map((npc) => ({ ...npc, id: crypto.randomUUID(), campaignId })))
       if (entry.notes) await db.notes.add({ ...entry.notes, campaignId })
+      await db.encounters.bulkAdd((entry.encounters ?? []).map((enc) => ({
+        ...enc,
+        id: crypto.randomUUID(),
+        campaignId,
+        monsters: enc.monsters.map((m) => ({ ...m, index: monsterIds.get(m.index) ?? m.index })),
+      })))
       if (entry.combat && entry.combat.id !== QUICK_COMBAT) {
         const combatants = entry.combat.combatants.map((c) => ({
           ...c,

@@ -18,6 +18,7 @@ import { GeneratorsPage } from './pages/GeneratorsPage'
 import { NpcsPage } from './pages/NpcsPage'
 import { NotesPage } from './pages/NotesPage'
 import { HomebrewPage } from './pages/HomebrewPage'
+import { EncounterEditorPage, EncountersPage } from './pages/EncountersPage'
 import { MonsterEditorPage, SpellEditorPage } from './pages/HomebrewEditorPages'
 
 function App() {
@@ -47,6 +48,8 @@ function App() {
             <Route path="campaign/:campaignId" element={<CampaignLayout />}>
               <Route index element={<Overview />} />
               <Route path="combat" element={<CampaignCombat />} />
+              <Route path="encounters" element={<EncountersPage />} />
+              <Route path="encounters/:encounterId" element={<EncounterEditorPage />} />
               <Route path="npcs" element={<NpcsPage />} />
               <Route path="notes" element={<NotesPage />} />
               <Route path="lookup" element={<LookupPage />} />
@@ -91,6 +94,7 @@ function Layout() {
     ? [
         { to: base, label: 'Overview', end: true },
         { to: `${base}/combat`, label: 'Combat' },
+        { to: `${base}/encounters`, label: 'Encounters' },
         { to: `${base}/npcs`, label: 'NPCs' },
         { to: `${base}/notes`, label: 'Notes' },
         { to: `${base}/lookup`, label: 'Quick Lookup' },

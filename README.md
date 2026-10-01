@@ -14,6 +14,11 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - **Add party** puts every PC into the campaign's fight at their current HP
 - Export a campaign (or everything) to a backup file, and import it again, e.g. on another computer
 
+**Encounters** (inside each campaign)
+- Prepare fights in advance: monsters (SRD or homebrew) with quantities, notes, and Planned / Used status
+- Live difficulty for the party: 2014 (adjusted XP vs Easy / Medium / Hard / Deadly) or 2024 (XP vs Low / Moderate / High budgets), following the edition switch; untick PCs who aren't at the session
+- **Load into combat**: replace or add to monsters already in the fight, one initiative roll per group, average or rolled HP, and optionally add the party
+
 **Combat tracker**
 - Add players and custom monsters (leave Initiative blank to roll a d20). Press Enter to add.
 - Turn order sorted by initiative, with a round counter and Previous / Next turn
@@ -67,15 +72,15 @@ Actions panel in the combat tracker with attack, damage and spell rolls, and lim
 ### Homebrew ✅
 Homebrew monsters and spells with editors, SRD copies, edition tags and export/import.
 
+### Encounters ✅
+Prepared encounters with difficulty for the party, loaded into combat with group initiative and optional rolled HP.
+
 ### v0.2: Quality of life
-- Prepare named encounters in advance and load them into a fight
 - Condition durations
-- Roll monster HP from hit dice instead of using the average
 - Saving throw buttons for monsters
 
 ### Later: All-in-one toolkit
 - Session prep: scenes, secrets and clues, planned encounters
-- Encounter builder with difficulty estimates
 - Campaign wiki: NPCs, locations, factions and items, all linked to each other
 - Session log and recaps
 - More generators: random encounters, taverns and shops, weather, rumours

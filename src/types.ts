@@ -77,3 +77,26 @@ export type Note = {
   text: string
   updatedAt: number
 }
+
+// A monster in a prepared encounter, and how many of it. XP and CR are copied in so the
+// difficulty can be shown without loading the rules data.
+export type EncounterMonster = {
+  edition: Edition
+  index: string         // SRD index, or "hb-..." for homebrew
+  name: string
+  count: number
+  xp: number
+  cr: number
+}
+
+// A fight prepared in advance for a campaign.
+export type Encounter = {
+  id: string
+  campaignId: string
+  name: string
+  notes: string
+  status: 'planned' | 'used'
+  hpMode: 'average' | 'roll'   // use the stat block's average HP, or roll each monster's hit dice
+  monsters: EncounterMonster[]
+  updatedAt: number
+}
