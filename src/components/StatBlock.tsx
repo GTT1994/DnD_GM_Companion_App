@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Feature, Monster } from '../data/srd'
 import { abilityMod, formatCr, signed } from '../lib/dice'
+import { Markdown } from './Markdown'
 
 const ABILITY_NAMES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
 
@@ -92,7 +93,8 @@ function Features({ title, list }: { title?: string; list?: Feature[] }) {
     <section className="features">
       {title && <h3>{title}</h3>}
       {list.map((f) => (
-        <p key={f.name}><strong><em>{f.name}.</em></strong> {f.desc}</p>
+        // Shown as Markdown so line breaks and spell lists display properly; ***text*** is bold italic.
+        <Markdown key={f.name} text={`***${f.name}.*** ${f.desc}`} />
       ))}
     </section>
   )

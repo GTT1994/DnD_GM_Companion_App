@@ -44,12 +44,37 @@ function usageLabel(usage) {
   return ''
 }
 
+// Builds a Markdown spell list from structured spellcasting data, grouped the way
+// 2024 stat blocks show it, e.g. "- **At Will:** Light, Mage Hand" / "- **1/Day Each:** Fireball".
+function spellList(spells) {
+  const groups = new Map()  // label → spell names, in the order they first appear
+  for (const s of spells) {
+    const label = s.usage?.type === 'at will' ? 'At Will'
+      : s.usage?.type === 'per day' ? `${s.usage.times}/Day`
+      : 'Spells'
+    const name = s.notes ? `${s.name} (${s.notes.charAt(0).toLowerCase()}${s.notes.slice(1)})` : s.name
+    groups.set(label, [...(groups.get(label) ?? []), name])
+  }
+  // At Will first, then the most uses per day first (3/Day before 1/Day).
+  const order = (label) => (label === 'At Will' ? -100 : -parseInt(label) || 0)
+  return [...groups]
+    .sort(([a], [b]) => order(a) - order(b))
+    .map(([label, names]) => `- **${label}${names.length > 1 && label.includes('/Day') ? ' Each' : ''}:** ${names.join(', ')}`)
+    .join('\n')
+}
+
 // Keeps just the name and description of each trait or action.
 function abilities(list) {
   if (!list?.length) return undefined
   return list.map((a) => {
     const usage = usageLabel(a.usage)
-    return { name: usage ? `${a.name} (${usage})` : a.name, desc: a.desc }
+    // A "* note" footnote line (2014 spell lists) would show as a bullet point: keep its * and put it on its own line.
+    let desc = a.desc.replace(/\n\* /g, '\n\n\\* ')
+    // 2024 spellcasting text ends "...casts one of the following spells:" with the list stored separately.
+    if (a.spellcasting?.spells?.length && desc.trimEnd().endsWith(':')) {
+      desc = `${desc.trimEnd()}\n\n${spellList(a.spellcasting.spells)}`
+    }
+    return { name: usage ? `${a.name} (${usage})` : a.name, desc }
   })
 }
 

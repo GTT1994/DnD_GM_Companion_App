@@ -554,6 +554,8 @@ button.remove:hover:not(:disabled) { border-color: var(--red); color: var(--red)
 }
 
 .features p { margin: 0.5em 0; }
+.features ul { margin: 0.3em 0 0.6em; }
+.features li { margin: 0.15em 0; }
 
 /* Markdown text from the SRD (rules, conditions, spells, items) */
 .markdown p { margin: 0.5em 0; }
