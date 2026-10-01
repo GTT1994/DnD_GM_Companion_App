@@ -5,8 +5,42 @@
 import { useEffect, useState } from 'react'
 import type { Edition } from '../types'
 
-// A named block of text in a stat block, e.g. a trait or an action.
-export type Feature = { name: string; desc: string }
+// One part of an action's damage, e.g. 1d6+2 Slashing.
+export type DamagePart = {
+  dice: string
+  type: string
+  note?: string          // e.g. "Two handed"
+  alternative?: boolean  // one of several options; pick the one that applies
+}
+
+// A spell a monster can cast, and how often.
+export type MonsterSpell = {
+  index: string
+  name: string
+  level: number                    // 0 = cantrip
+  usage?: 'atWill' | number        // number = uses per day; undefined = uses a spell slot (or limited by the trait)
+  notes?: string
+}
+
+export type Spellcasting = {
+  ability?: string                 // e.g. "INT"
+  dc?: number
+  attack?: number                  // spell attack bonus (2014); otherwise DC − 8
+  level?: number                   // caster level (2014), scales cantrips
+  slots?: Record<string, number>   // spell level → slots per day (2014)
+  spells: MonsterSpell[]
+}
+
+// A named block of text in a stat block (a trait or an action), plus the numbers needed to roll it.
+export type Feature = {
+  name: string
+  desc: string
+  attack?: number                  // attack bonus, e.g. +4
+  damage?: DamagePart[]
+  dc?: { ability: string; value: number; success: 'half' | 'none' | string }
+  usage?: { type: 'recharge'; min: number } | { type: 'perDay'; times: number } | { type: 'rest' }
+  spellcasting?: Spellcasting
+}
 
 export type Monster = {
   index: string
@@ -49,6 +83,13 @@ export type Spell = {
   desc: string
   higherLevel?: string
   classes: string[]
+  attackType?: 'melee' | 'ranged'          // set for spell attacks
+  damageType?: string
+  damageBySlot?: Record<string, string>    // slot level → damage dice
+  damageByLevel?: Record<string, string>   // cantrips: caster level → damage dice
+  healBySlot?: Record<string, string>      // slot level → healing dice (may contain "MOD")
+  saveAbility?: string                     // e.g. "DEX" for saving throw spells
+  saveSuccess?: string                     // 'half' if a successful save halves the damage
 }
 
 export type MagicItem = {

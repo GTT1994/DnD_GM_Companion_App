@@ -9,7 +9,7 @@ const ABILITY_NAMES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
 
 type StatBlockProps = {
   monster: Monster
-  onAdd: (count: number) => void  // adds this many of the monster to the combat tracker
+  onAdd: (count: number) => Promise<unknown>  // adds this many of the monster to the combat tracker
 }
 
 export function StatBlock({ monster: m, onAdd }: StatBlockProps) {
@@ -17,9 +17,10 @@ export function StatBlock({ monster: m, onAdd }: StatBlockProps) {
   // A short "Added 3 × Goblin" message shown after adding.
   const [added, setAdded] = useState('')
 
-  function add() {
+  async function add() {
     const n = Math.max(1, Math.min(20, parseInt(count) || 1))  // between 1 and 20
-    onAdd(n)
+    setAdded('Adding…')
+    await onAdd(n)  // wait until it's saved before saying it's done
     setAdded(`Added ${n} × ${m.name} to combat`)
   }
 

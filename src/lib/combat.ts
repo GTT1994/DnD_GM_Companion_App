@@ -3,7 +3,8 @@
 // procedure that takes the table and a command, and returns the updated table.
 // It never edits the old state, so React can tell something changed.
 
-import type { CombatState, Combatant } from '../types'
+import type { CombatState, Combatant, LogEntry } from '../types'
+import { concentrationDc, LEGENDARY_KEY } from './actions'
 
 export type CombatAction =
   | { type: 'add'; combatants: Combatant[] }
@@ -18,6 +19,13 @@ export type CombatAction =
   | { type: 'endCombat' }
   | { type: 'clearMonsters' }
   | { type: 'clearAll' }
+  | { type: 'setUse'; id: string; key: string; used: number }        // how many times a limited ability has been used
+  | { type: 'setLegendaryMax'; id: string; max: number }
+  | { type: 'concentrate'; id: string; spell: string }                // start concentrating on a spell
+  | { type: 'log'; entry: LogEntry }                                  // add a line to the roll history
+
+const LOG_LENGTH = 10       // how many rolls the history keeps
+const CONCENTRATING = 'Concentrating'
 
 export const emptyCombat: CombatState = { combatants: [], round: 0, activeId: null }
 
@@ -35,6 +43,36 @@ export function applyDamage(c: Combatant, amount: number): Combatant {
 // Healing can't take HP above the maximum.
 export function applyHealing(c: Combatant, amount: number): Combatant {
   return { ...c, hp: Math.min(c.maxHp, c.hp + amount) }
+}
+
+// Adds a line to the top of the roll history, keeping only the most recent few.
+function addLog(state: CombatState, entry: LogEntry): CombatState {
+  return { ...state, log: [entry, ...(state.log ?? [])].slice(0, LOG_LENGTH) }
+}
+
+// Damage, plus a reminder in the roll history if the target is concentrating on a spell.
+function damage(state: CombatState, id: string, amount: number): CombatState {
+  const target = state.combatants.find((c) => c.id === id)
+  const next = updateOne(state, id, (c) => applyDamage(c, amount))
+  const concentrating = target?.conditions.find((name) => name.startsWith(CONCENTRATING))
+  if (!target || !concentrating || amount <= 0) return next
+  return addLog(next, {
+    id: crypto.randomUUID(),
+    text: `${target.name} took ${amount} damage while concentrating on ${concentrating.split(': ')[1] ?? 'a spell'}: Con save DC ${concentrationDc(amount)} to keep it`,
+  })
+}
+
+// Sets one entry in a combatant's "uses" record; 0 removes it.
+function setUse(c: Combatant, key: string, used: number): Combatant {
+  const uses = { ...c.uses }
+  if (used > 0) uses[key] = used
+  else delete uses[key]
+  return { ...c, uses }
+}
+
+// Legendary actions come back at the start of the creature's turn.
+function startTurn(state: CombatState): CombatState {
+  return state.activeId ? updateOne(state, state.activeId, (c) => setUse(c, LEGENDARY_KEY, 0)) : state
 }
 
 // Applies a change to the one combatant with the given ID, leaving the others unchanged.
@@ -86,7 +124,7 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
     case 'remove':
       return removeWhere(state, (c) => c.id === action.id)
     case 'damage':
-      return updateOne(state, action.id, (c) => applyDamage(c, action.amount))
+      return damage(state, action.id, action.amount)
     case 'heal':
       return updateOne(state, action.id, (c) => applyHealing(c, action.amount))
     case 'setTempHp':
@@ -101,16 +139,34 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
           : [...c.conditions, action.condition],
       }))
     case 'nextTurn':
-      return nextTurn(state)
+      return startTurn(nextTurn(state))
     case 'previousTurn':
       return previousTurn(state)
     case 'endCombat':
-      // Keep everyone, but reset the round counter and clear conditions.
-      return { combatants: state.combatants.map((c) => ({ ...c, conditions: [] })), round: 0, activeId: null }
+      // Keep everyone, but reset the round counter, conditions, legendary actions and roll history.
+      // Daily uses and spell slots are kept: they only come back after a rest.
+      return {
+        combatants: state.combatants.map((c) => ({ ...setUse(c, LEGENDARY_KEY, 0), conditions: [] })),
+        round: 0,
+        activeId: null,
+        log: [],
+      }
     case 'clearMonsters':
       return removeWhere(state, (c) => !c.isPlayer)
     case 'clearAll':
       return emptyCombat
+    case 'setUse':
+      return updateOne(state, action.id, (c) => setUse(c, action.key, action.used))
+    case 'setLegendaryMax':
+      return updateOne(state, action.id, (c) => ({ ...c, legendaryMax: Math.max(0, action.max) }))
+    case 'concentrate':
+      // Only one concentration spell at a time: replace any earlier one.
+      return updateOne(state, action.id, (c) => ({
+        ...c,
+        conditions: [...c.conditions.filter((name) => !name.startsWith(CONCENTRATING)), `${CONCENTRATING}: ${action.spell}`],
+      }))
+    case 'log':
+      return addLog(state, action.entry)
   }
 }
 

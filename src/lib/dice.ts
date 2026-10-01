@@ -8,15 +8,30 @@ export function rollDie(sides: number, random: Random = Math.random): number {
   return Math.floor(random() * sides) + 1
 }
 
+// Reads dice written as text: "2d6+3", "d20", "1d8 - 1", or a flat number like "5".
+// Returns null if the text isn't dice.
+export function parseDice(expression: string): { count: number; sides: number; modifier: number } | null {
+  const text = expression.replace(/\s/g, '')
+  if (/^[+-]?\d+$/.test(text)) return { count: 0, sides: 0, modifier: parseInt(text) }
+  const match = text.match(/^(\d*)d(\d+)([+-]\d+)?$/i)
+  if (!match) return null
+  return { count: match[1] ? parseInt(match[1]) : 1, sides: parseInt(match[2]), modifier: match[3] ? parseInt(match[3]) : 0 }
+}
+
+// Rolls dice written as text. With crit: true the number of dice is doubled (a critical hit),
+// but not the modifier. Returns the total, each die's result and the modifier.
+export function rollDice(expression: string, options: { crit?: boolean; random?: Random } = {}) {
+  const dice = parseDice(expression)
+  if (!dice) throw new Error(`Not a dice expression: ${expression}`)
+  const count = options.crit ? dice.count * 2 : dice.count
+  const rolls = Array.from({ length: count }, () => rollDie(dice.sides, options.random))
+  return { total: rolls.reduce((sum, r) => sum + r, 0) + dice.modifier, rolls, modifier: dice.modifier }
+}
+
 // Rolls dice written as text, e.g. "2d6+3" or "d20". Returns the total and each die's result.
 export function roll(expression: string, random: Random = Math.random): { total: number; rolls: number[] } {
-  const match = expression.replace(/\s/g, '').match(/^(\d*)d(\d+)([+-]\d+)?$/i)
-  if (!match) throw new Error(`Not a dice expression: ${expression}`)
-  const count = match[1] ? parseInt(match[1]) : 1
-  const sides = parseInt(match[2])
-  const modifier = match[3] ? parseInt(match[3]) : 0
-  const rolls = Array.from({ length: count }, () => rollDie(sides, random))
-  return { total: rolls.reduce((sum, r) => sum + r, 0) + modifier, rolls }
+  const { total, rolls } = rollDice(expression, { random })
+  return { total, rolls }
 }
 
 // The modifier for an ability score, e.g. 14 → +2, 9 → -1.

@@ -8,13 +8,14 @@ import type { CombatAction } from '../lib/combat'
 type CombatantRowProps = {
   combatant: Combatant
   isActive: boolean                     // true when it's this combatant's turn
+  isSelected: boolean                   // true when its actions panel is open
   conditionNames: string[]              // conditions that can be added
   conditionHelp: Record<string, string> // short description of each condition, shown on hover
   dispatch: Dispatch<CombatAction>      // sends changes to the tracker
-  onOpenMonster: () => void             // opens this monster's stat block (only used for SRD monsters)
+  onSelect: () => void                  // opens the actions panel (monsters only)
 }
 
-export function CombatantRow({ combatant: c, isActive, conditionNames, conditionHelp, dispatch, onOpenMonster }: CombatantRowProps) {
+export function CombatantRow({ combatant: c, isActive, isSelected, conditionNames, conditionHelp, dispatch, onSelect }: CombatantRowProps) {
   // The text in the HP amount box, used by the Damage / Heal / Temp buttons.
   const [amount, setAmount] = useState('')
   const value = parseInt(amount)
@@ -33,7 +34,7 @@ export function CombatantRow({ combatant: c, isActive, conditionNames, condition
   }
 
   const hpPercent = Math.round((c.hp / c.maxHp) * 100)
-  const classes = ['combatant', isActive && 'active', c.hp === 0 && 'down', c.isPlayer ? 'player' : 'monster']
+  const classes = ['combatant', isActive && 'active', isSelected && 'selected', c.hp === 0 && 'down', c.isPlayer ? 'player' : 'monster']
 
   return (
     <tr className={classes.filter(Boolean).join(' ')}>
@@ -51,8 +52,9 @@ export function CombatantRow({ combatant: c, isActive, conditionNames, condition
         />
       </td>
       <td className="name-cell">
-        {c.monster ? (
-          <button type="button" className="link" onClick={onOpenMonster} title="Show stat block">{c.name}</button>
+        {/* Monsters' names open their actions panel */}
+        {!c.isPlayer ? (
+          <button type="button" className="link" onClick={onSelect} title="Show actions">{c.name}</button>
         ) : (
           c.name
         )}

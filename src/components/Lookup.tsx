@@ -33,7 +33,7 @@ type LookupProps = {
   state: LookupState
   setState: (state: LookupState) => void
   searchRef: RefObject<HTMLInputElement | null>  // lets the ⌘K shortcut focus the search box
-  onAddMonster: (monster: Monster, count: number) => void
+  onAddMonster: (monster: Monster, count: number) => Promise<unknown>
 }
 
 export function Lookup({ edition, state, setState, searchRef, onAddMonster }: LookupProps) {
@@ -127,7 +127,7 @@ type DetailProps = {
     items: MagicItem[] | null
     rules: TextEntry[]
   }
-  onAddMonster: (monster: Monster, count: number) => void
+  onAddMonster: (monster: Monster, count: number) => Promise<unknown>
 }
 
 // Shows the selected entry, using the right layout for its category.

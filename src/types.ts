@@ -17,6 +17,14 @@ export type Combatant = {
   conditions: string[]  // names of active conditions, e.g. "Prone"
   monster?: { edition: Edition; index: string }  // the SRD monster it came from, if any
   pcId?: string         // the party member it represents, if any (their HP is kept in sync)
+  uses?: Record<string, number>  // limited-use abilities spent this fight, e.g. { "slot:3": 2, "feature:Fire Breath": 1 }
+  legendaryMax?: number          // legendary actions per round (defaults to 3)
+}
+
+// One line in the combat's roll history.
+export type LogEntry = {
+  id: string
+  text: string
 }
 
 // Everything the combat tracker saves between page loads.
@@ -24,6 +32,7 @@ export type CombatState = {
   combatants: Combatant[]
   round: number            // 0 = combat not started yet
   activeId: string | null  // whose turn it is
+  log?: LogEntry[]         // recent rolls, newest first
 }
 
 // The kinds of SRD entry that Quick Lookup can show.

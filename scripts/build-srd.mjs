@@ -63,7 +63,50 @@ function spellList(spells) {
     .join('\n')
 }
 
-// Keeps just the name and description of each trait or action.
+// How often a trait or action can be used, in the app's own shape (for tracking uses in combat).
+function usageOf(usage) {
+  if (usage?.type === 'recharge on roll') return { type: 'recharge', min: usage.min_value }
+  if (usage?.type === 'per day') return { type: 'perDay', times: usage.times }
+  if (usage?.type === 'recharge after rest') return { type: 'rest' }
+  return undefined
+}
+
+// Damage parts as { dice, type, note? }. A choice of damage (e.g. one- or two-handed) becomes
+// one part per option, marked as alternatives.
+function damageParts(damage) {
+  const parts = []
+  for (const d of damage ?? []) {
+    if (d.damage_dice) parts.push({ dice: d.damage_dice, type: d.damage_type?.name ?? '' })
+    for (const option of d.from?.options ?? []) {
+      if (option.damage_dice) {
+        parts.push({ dice: option.damage_dice, type: option.damage_type?.name ?? '', note: option.notes, alternative: true })
+      }
+    }
+  }
+  return parts.length ? parts : undefined
+}
+
+// A monster's spellcasting: DC, attack bonus, caster level, slots, and spells with how often they can be cast.
+function spellcastingOf(sc) {
+  if (!sc) return undefined
+  return {
+    ability: sc.ability?.name,
+    dc: sc.dc,
+    attack: sc.modifier,           // 2014 only; the app uses DC − 8 when missing
+    level: sc.level,               // 2014 only, used to scale cantrips
+    slots: sc.slots,               // 2014 only: spell level → number of slots
+    spells: sc.spells.map((s) => ({
+      index: s.index ?? s.url.split('/').pop(),
+      name: s.name,
+      level: s.level,
+      // 'atWill', a number of uses per day, or undefined (uses a slot, or limited by the trait itself)
+      usage: s.usage?.type === 'at will' ? 'atWill' : s.usage?.type === 'per day' ? s.usage.times : undefined,
+      notes: s.notes,
+    })),
+  }
+}
+
+// Keeps the name and description of each trait or action, plus the numbers needed to roll it.
 function abilities(list) {
   if (!list?.length) return undefined
   return list.map((a) => {
@@ -74,7 +117,15 @@ function abilities(list) {
     if (a.spellcasting?.spells?.length && desc.trimEnd().endsWith(':')) {
       desc = `${desc.trimEnd()}\n\n${spellList(a.spellcasting.spells)}`
     }
-    return { name: usage ? `${a.name} (${usage})` : a.name, desc }
+    return {
+      name: usage ? `${a.name} (${usage})` : a.name,
+      desc,
+      attack: a.attack_bonus,
+      damage: damageParts(a.damage),
+      dc: a.dc?.dc_value ? { ability: a.dc.dc_type.name, value: a.dc.dc_value, success: a.dc.success_type } : undefined,
+      usage: usageOf(a.usage),
+      spellcasting: spellcastingOf(a.spellcasting),
+    }
   })
 }
 
@@ -145,8 +196,25 @@ function monster(m) {
 
 // --- Spells -----------------------------------------------------------------
 
+const ABILITY_ABBREVIATIONS = { strength: 'STR', dexterity: 'DEX', constitution: 'CON', intelligence: 'INT', wisdom: 'WIS', charisma: 'CHA' }
+
+// Which saving throw a spell asks for, and whether a success halves the damage.
+// 2014 stores this; for 2024 it's read from the description, e.g. "makes a Dexterity saving throw".
+function spellSave(s, desc) {
+  if (s.attack_type) return {}
+  if (s.dc) return { saveAbility: s.dc.dc_type.name, saveSuccess: s.dc.dc_success }
+  const match = desc.match(/(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw/i)
+  if (!match) return {}
+  return {
+    saveAbility: ABILITY_ABBREVIATIONS[match[1].toLowerCase()],
+    saveSuccess: /half as much damage|half damage/i.test(desc) ? 'half' : 'none',
+  }
+}
+
 function spell(s) {
   const components = s.components.join(', ') + (s.material ? ` (${s.material})` : '')
+  const desc = toText(s.desc ?? s.description)
+  const damage = Array.isArray(s.damage) ? s.damage[0] : s.damage  // a list in 2014, one object in 2024
   return {
     index: s.index,
     name: s.name,
@@ -158,9 +226,15 @@ function spell(s) {
     duration: s.duration,
     concentration: s.concentration,
     ritual: s.ritual,
-    desc: toText(s.desc ?? s.description),
+    desc,
     higherLevel: toText(s.higher_level),
     classes: s.classes.map((c) => c.name),
+    attackType: s.attack_type,                          // 'melee' or 'ranged' for spell attacks
+    damageType: damage?.damage_type?.name,
+    damageBySlot: damage?.damage_at_slot_level,         // slot level → dice, e.g. { 3: '8d6', 4: '9d6' }
+    damageByLevel: damage?.damage_at_character_level,   // cantrips: caster level → dice
+    healBySlot: s.heal_at_slot_level,                   // slot level → dice, may include "MOD"
+    ...spellSave(s, desc),
   }
 }
 

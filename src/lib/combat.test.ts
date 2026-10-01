@@ -85,3 +85,38 @@ describe('uniqueName', () => {
     expect(uniqueName('Orc', [])).toBe('Orc')
   })
 })
+
+describe('monster ability tracking', () => {
+  it('records and clears uses', () => {
+    let state = combatReducer(started, { type: 'setUse', id: 'b', key: 'slot:3', used: 2 })
+    expect(state.combatants.find((x) => x.id === 'b')?.uses).toEqual({ 'slot:3': 2 })
+    state = combatReducer(state, { type: 'setUse', id: 'b', key: 'slot:3', used: 0 })
+    expect(state.combatants.find((x) => x.id === 'b')?.uses).toEqual({})
+  })
+
+  it('gives legendary actions back at the start of the creature\'s turn', () => {
+    const state = combatReducer(started, { type: 'setUse', id: 'b', key: 'legendary', used: 2 })
+    const next = combatReducer(state, { type: 'nextTurn' })  // a → b
+    expect(next.combatants.find((x) => x.id === 'b')?.uses).toEqual({})
+  })
+
+  it('replaces an earlier concentration spell', () => {
+    let state = combatReducer(started, { type: 'concentrate', id: 'b', spell: 'Hold Person' })
+    state = combatReducer(state, { type: 'concentrate', id: 'b', spell: 'Fly' })
+    expect(state.combatants.find((x) => x.id === 'b')?.conditions).toEqual(['Concentrating: Fly'])
+  })
+
+  it('logs a concentration check when a concentrating creature takes damage', () => {
+    let state = combatReducer(started, { type: 'concentrate', id: 'b', spell: 'Fly' })
+    state = combatReducer(state, { type: 'damage', id: 'b', amount: 24 })
+    expect(state.log?.[0].text).toBe('b took 24 damage while concentrating on Fly: Con save DC 12 to keep it')
+  })
+
+  it('keeps only the last 10 log lines and clears them when combat ends', () => {
+    let state = started
+    for (let i = 0; i < 12; i++) state = combatReducer(state, { type: 'log', entry: { id: `${i}`, text: `roll ${i}` } })
+    expect(state.log).toHaveLength(10)
+    expect(state.log?.[0].text).toBe('roll 11')
+    expect(combatReducer(state, { type: 'endCombat' }).log).toEqual([])
+  })
+})

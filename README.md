@@ -20,6 +20,12 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - Damage, healing and temporary HP (damage uses up temp HP first; HP stays between 0 and max)
 - Conditions from the SRD, plus Concentrating; hover a condition to read it, click it to remove it
 - Edit initiative inline; Clear NPCs keeps the party for the next fight
+- Click a monster's name for its **actions panel** (it also opens automatically on the monster's turn):
+  - **To hit** (with advantage/disadvantage) and **Damage** buttons for every attack; a natural 20 doubles the damage dice
+  - Tick boxes for extra or conditional damage, saving throw DCs, and **Apply** / **Apply half** to a target
+  - Recharge abilities, X/Day uses and legendary actions tracked with clickable pips
+  - **Spellcasting**: spell slots, upcasting, X/Day spells, spell details, spell attacks and damage, and automatic Concentrating (with a Con save reminder when hit)
+  - A quick dice roller for monsters you added by hand, and a history of the last 10 rolls
 - Everything is saved in the browser's database, so a refresh doesn't lose the fight
 
 **Quick lookup** (press **⌘K** anywhere)
@@ -47,12 +53,14 @@ Combat tracker, quick lookup and generators, as above.
 ### Campaigns ✅
 Home page, campaigns with party, combat, NPCs and notes, Quick combat, backups.
 
+### Monster actions ✅
+Actions panel in the combat tracker with attack, damage and spell rolls, and limited-use tracking.
+
 ### v0.2: Quality of life
 - Prepare named encounters in advance and load them into a fight
-- Condition durations and concentration reminders
-- Monster stat blocks shown inside the combat tracker
-- Clickable dice rolls in stat blocks
+- Condition durations
 - Roll monster HP from hit dice instead of using the average
+- Saving throw buttons for monsters
 
 ### Later: All-in-one toolkit
 - Session prep: scenes, secrets and clues, planned encounters
