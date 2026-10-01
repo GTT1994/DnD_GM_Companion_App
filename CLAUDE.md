@@ -11,10 +11,10 @@ A DnD 5e companion app for Game Masters, for personal use on a laptop. See [READ
 - `npm run build`: type-check and build into `dist/`
 
 ## Teaching mode
-The developer is learning this stack while building the app. Their background is SQL, some C# and some Python.
+The developer is learning this stack while building the app. Their strong skill is SQL; their C# and Python knowledge is minimal.
 
 - Work through the learning steps in order, one new concept per step. Track progress in [LEARNING.md](LEARNING.md).
-- Explain new concepts briefly by comparing them to C# or SQL.
+- Explain new concepts briefly by comparing them to SQL only, never C#. Where SQL has nothing similar, explain in plain terms.
 - Let the developer write the code. Give skeletons with `// TODO` gaps rather than finished code.
 - When they're stuck, help in stages: a hint, then pseudocode, then full code only if they ask.
 - Review their code like a pull request, explaining *why* a change is better.
