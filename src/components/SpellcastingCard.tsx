@@ -70,7 +70,8 @@ export function SpellcastingCard({ feature, monster, spells, ctx }: Spellcasting
 
       {[...groups].map(([label, list]) => (
         <div key={label} className="spell-group">
-          <div className="spell-group-label">{label}</div>
+          {/* "each" only makes sense for two or more spells */}
+          <div className="spell-group-label">{list.length > 1 ? label : label.replace(' each', '')}</div>
           {list.map((ms) => (
             <SpellRow
               key={ms.index}

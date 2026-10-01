@@ -8,24 +8,64 @@ export function rollDie(sides: number, random: Random = Math.random): number {
   return Math.floor(random() * sides) + 1
 }
 
-// Reads dice written as text: "2d6+3", "d20", "1d8 - 1", or a flat number like "5".
+// Dice written as text, split into its dice (e.g. 8d6 and 2d8) and a flat modifier.
+export type ParsedDice = { dice: { count: number; sides: number }[]; modifier: number }
+
+// Reads dice written as text: "2d6+3", "d20", "1d8 - 1", "8d6 + 2d8", or a flat number like "5".
 // Returns null if the text isn't dice.
-export function parseDice(expression: string): { count: number; sides: number; modifier: number } | null {
+export function parseDice(expression: string): ParsedDice | null {
   const text = expression.replace(/\s/g, '')
-  if (/^[+-]?\d+$/.test(text)) return { count: 0, sides: 0, modifier: parseInt(text) }
-  const match = text.match(/^(\d*)d(\d+)([+-]\d+)?$/i)
-  if (!match) return null
-  return { count: match[1] ? parseInt(match[1]) : 1, sides: parseInt(match[2]), modifier: match[3] ? parseInt(match[3]) : 0 }
+  // The whole text must be terms like "2d6", "+3" or "-1d4", one after another.
+  if (!/^[+-]?(\d*d\d+|\d+)([+-](\d*d\d+|\d+))*$/i.test(text)) return null
+  const parsed: ParsedDice = { dice: [], modifier: 0 }
+  for (const [, sign, term] of text.matchAll(/([+-]?)(\d*d\d+|\d+)/gi)) {
+    if (/d/i.test(term)) {
+      if (sign === '-') return null  // subtracting dice isn't supported
+      const [count, sides] = term.toLowerCase().split('d')
+      parsed.dice.push({ count: count ? parseInt(count) : 1, sides: parseInt(sides) })
+    } else {
+      parsed.modifier += sign === '-' ? -parseInt(term) : parseInt(term)
+    }
+  }
+  return parsed
+}
+
+// Writes parsed dice back as text, e.g. { dice: [8d6], modifier: 3 } → "8d6+3".
+export function formatDice(parsed: ParsedDice): string {
+  const dice = parsed.dice.filter((d) => d.count > 0).map((d) => `${d.count}d${d.sides}`).join('+')
+  if (!dice) return `${parsed.modifier}`
+  return parsed.modifier ? `${dice}${parsed.modifier > 0 ? '+' : ''}${parsed.modifier}` : dice
+}
+
+// Adds two dice expressions, combining dice of the same size: "8d6" + "2d6" → "10d6".
+export function addDice(a: string, b: string): string {
+  const left = parseDice(a)
+  const right = parseDice(b)
+  if (!left || !right) throw new Error(`Not dice: ${a} / ${b}`)
+  const dice = [...left.dice]
+  for (const d of right.dice) {
+    const same = dice.find((x) => x.sides === d.sides)
+    if (same) same.count += d.count
+    else dice.push({ ...d })
+  }
+  return formatDice({ dice, modifier: left.modifier + right.modifier })
+}
+
+// Multiplies the number of dice (not the modifier): ("1d10", 3) → "3d10".
+export function multiplyDice(expression: string, times: number): string {
+  const parsed = parseDice(expression)
+  if (!parsed) throw new Error(`Not dice: ${expression}`)
+  return formatDice({ ...parsed, dice: parsed.dice.map((d) => ({ ...d, count: d.count * times })) })
 }
 
 // Rolls dice written as text. With crit: true the number of dice is doubled (a critical hit),
 // but not the modifier. Returns the total, each die's result and the modifier.
 export function rollDice(expression: string, options: { crit?: boolean; random?: Random } = {}) {
-  const dice = parseDice(expression)
-  if (!dice) throw new Error(`Not a dice expression: ${expression}`)
-  const count = options.crit ? dice.count * 2 : dice.count
-  const rolls = Array.from({ length: count }, () => rollDie(dice.sides, options.random))
-  return { total: rolls.reduce((sum, r) => sum + r, 0) + dice.modifier, rolls, modifier: dice.modifier }
+  const parsed = parseDice(expression)
+  if (!parsed) throw new Error(`Not a dice expression: ${expression}`)
+  const rolls = parsed.dice.flatMap((d) =>
+    Array.from({ length: options.crit ? d.count * 2 : d.count }, () => rollDie(d.sides, options.random)))
+  return { total: rolls.reduce((sum, r) => sum + r, 0) + parsed.modifier, rolls, modifier: parsed.modifier }
 }
 
 // Rolls dice written as text, e.g. "2d6+3" or "d20". Returns the total and each die's result.

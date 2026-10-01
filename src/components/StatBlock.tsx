@@ -1,6 +1,7 @@
 // Shows a monster's full stat block, with a button to add it to the combat tracker.
+// Also used (without the button) as the preview in the homebrew monster editor.
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Feature, Monster } from '../data/srd'
 import { abilityMod, formatCr, signed } from '../lib/dice'
 import { Markdown } from './Markdown'
@@ -9,10 +10,11 @@ const ABILITY_NAMES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
 
 type StatBlockProps = {
   monster: Monster
-  onAdd: (count: number) => Promise<unknown>  // adds this many of the monster to the combat tracker
+  onAdd?: (count: number) => Promise<unknown>  // adds this many of the monster to the combat tracker
+  extra?: ReactNode                             // more buttons, e.g. "Make homebrew copy"
 }
 
-export function StatBlock({ monster: m, onAdd }: StatBlockProps) {
+export function StatBlock({ monster: m, onAdd, extra }: StatBlockProps) {
   const [count, setCount] = useState('1')
   // A short "Added 3 × Goblin" message shown after adding.
   const [added, setAdded] = useState('')
@@ -20,7 +22,7 @@ export function StatBlock({ monster: m, onAdd }: StatBlockProps) {
   async function add() {
     const n = Math.max(1, Math.min(20, parseInt(count) || 1))  // between 1 and 20
     setAdded('Adding…')
-    await onAdd(n)  // wait until it's saved before saying it's done
+    await onAdd?.(n)  // wait until it's saved before saying it's done
     setAdded(`Added ${n} × ${m.name} to combat`)
   }
 
@@ -28,19 +30,27 @@ export function StatBlock({ monster: m, onAdd }: StatBlockProps) {
     <article className="stat-block">
       <header className="detail-header">
         <div>
-          <h2>{m.name}</h2>
-          <p className="meta">{m.meta}</p>
+          <h2>{m.name || 'Unnamed monster'}</h2>
+          <p className="meta">
+            {m.meta}
+            {m.homebrew && <span className="tag homebrew-tag">Homebrew</span>}
+          </p>
         </div>
-        <form
-          className="add-monster"
-          onSubmit={(e) => {
-            e.preventDefault()
-            add()
-          }}
-        >
-          <input type="number" min={1} max={20} value={count} onChange={(e) => setCount(e.target.value)} aria-label="How many to add" />
-          <button type="submit" className="primary">Add to combat</button>
-        </form>
+        <div className="detail-actions">
+          {extra}
+          {onAdd && (
+            <form
+              className="add-monster"
+              onSubmit={(e) => {
+                e.preventDefault()
+                add()
+              }}
+            >
+              <input type="number" min={1} max={20} value={count} onChange={(e) => setCount(e.target.value)} aria-label="How many to add" />
+              <button type="submit" className="primary">Add to combat</button>
+            </form>
+          )}
+        </div>
       </header>
       {added && <p className="notice">{added}</p>}
 

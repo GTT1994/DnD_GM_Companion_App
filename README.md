@@ -34,6 +34,14 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - Quick rules for the things GMs look up most (cover, DCs, exhaustion, grappling, travel pace…), plus the full SRD rules sections for 2014
 - Switch between the **2014** and **2024** rules in the top right
 
+**Homebrew**
+- Your own monsters and spells, in a shared library used by every campaign
+- Start from scratch, or press **Make homebrew copy** on any SRD monster or spell in Quick Lookup
+- Monster editor with a live stat block preview: attacks, damage dice, saving throws, Recharge / X per day uses, legendary actions and spellcasting (SRD or homebrew spells)
+- Spell editor: spell attack or saving throw, damage and healing as base dice plus extra per level
+- Tag each entry 2014, 2024 or Both; homebrew appears in Quick Lookup and works in the combat tracker's actions panel like SRD content
+- Export / import the homebrew library on its own (and it's included in **Export all**)
+
 **Generators**
 - NPCs: name by ancestry, occupation, looks, personality, mannerism, motivation and a secret; save the good ones to a campaign
 - Loot: individual treasure or hoards by challenge rating, with gems and SRD magic items (click an item to read it)
@@ -55,6 +63,9 @@ Home page, campaigns with party, combat, NPCs and notes, Quick combat, backups.
 
 ### Monster actions ✅
 Actions panel in the combat tracker with attack, damage and spell rolls, and limited-use tracking.
+
+### Homebrew ✅
+Homebrew monsters and spells with editors, SRD copies, edition tags and export/import.
 
 ### v0.2: Quality of life
 - Prepare named encounters in advance and load them into a fight

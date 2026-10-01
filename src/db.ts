@@ -3,14 +3,32 @@
 // first, then any indexed columns (other columns don't need declaring).
 
 import Dexie, { type Table } from 'dexie'
-import type { Campaign, CombatState, Note, Pc } from './types'
+import type { Campaign, CombatState, Edition, Note, Pc } from './types'
 import type { Npc } from './lib/generators'
+import type { Monster, Spell } from './data/srd'
 
 // A combat saved in the database. Its id is the campaign's id, or 'quick' for Quick combat.
 export type SavedCombat = CombatState & { id: string }
 
 // A generated NPC that has been saved to a campaign, with the GM's own notes.
 export type SavedNpc = Npc & { campaignId: string; notes: string; savedAt: number }
+
+// Which rules edition a homebrew entry shows up in.
+export type HomebrewEdition = Edition | 'both'
+
+// A homebrew monster: the same fields as an SRD monster, plus its edition tag. Its index starts "hb-".
+export type HomebrewMonster = Monster & { edition: HomebrewEdition; updatedAt: number }
+
+// A homebrew spell. Damage and healing are entered as base dice plus extra dice per slot level;
+// the app turns those into the same per-level tables the SRD spells have.
+export type HomebrewSpell = Spell & {
+  edition: HomebrewEdition
+  updatedAt: number
+  damageDice?: string      // e.g. "8d6" at the spell's own level
+  damagePerLevel?: string  // e.g. "1d6" extra for each slot level above
+  healDice?: string        // may include "+ MOD" for the caster's ability modifier
+  healPerLevel?: string
+}
 
 // The id of the single Quick combat slot.
 export const QUICK_COMBAT = 'quick'
@@ -21,6 +39,8 @@ class GmDatabase extends Dexie {
   combats!: Table<SavedCombat, string>
   npcs!: Table<SavedNpc, string>
   notes!: Table<Note, string>
+  homebrewMonsters!: Table<HomebrewMonster, string>
+  homebrewSpells!: Table<HomebrewSpell, string>
 
   constructor() {
     super('gm-companion')
@@ -31,6 +51,11 @@ class GmDatabase extends Dexie {
       combats: 'id',
       npcs: 'id, campaignId',
       notes: 'campaignId',
+    })
+    // Version 2 adds the shared homebrew library. Existing data is kept as it is.
+    this.version(2).stores({
+      homebrewMonsters: 'index, name',
+      homebrewSpells: 'index, name',
     })
   }
 }

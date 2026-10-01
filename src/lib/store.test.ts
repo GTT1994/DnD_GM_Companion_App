@@ -7,7 +7,8 @@ import {
   addPartyToCombat, addPc, applyCombatAction, createCampaign, deleteCampaign, getCombat, longRest,
   migrateLegacyStorage, updatePc, type PcFields,
 } from './store'
-import { exportCampaigns, importCampaigns } from './backup'
+import { exportCampaigns, exportHomebrew, importCampaigns } from './backup'
+import { blankMonster, blankSpell } from './homebrew'
 
 const thorin: PcFields = {
   name: 'Thorin', playerName: 'Sam', className: 'Fighter', level: 5, ac: 18, maxHp: 44,
@@ -84,13 +85,42 @@ describe('backups', () => {
     // Round-trip through JSON text, as a real file would.
     const file = JSON.parse(JSON.stringify(await exportCampaigns([campaignId])))
 
-    expect(await importCampaigns(file)).toBe(1)
+    expect(await importCampaigns(file)).toEqual({ campaigns: 1, monsters: 0, spells: 0 })
     const copy = (await db.campaigns.toArray()).find((c) => c.id !== campaignId)!
     const copyPc = await db.pcs.where('campaignId').equals(copy.id).first()
     const copyCombat = await getCombat(copy.id)
     expect(copy.name).toBe('Curse of the Test')
     expect(copyCombat.combatants[0].pcId).toBe(copyPc?.id)  // points at the copied PC, not the original
     expect((await db.notes.get(copy.id))?.text).toBe('The butler did it')
+  })
+
+  it('imports homebrew as copies and re-links spells and fights to them', async () => {
+    const spell = { ...blankSpell('both'), name: 'Hex Bolt' }
+    const monster = blankMonster('both')
+    monster.name = 'Hexer'
+    monster.actions = [{ name: 'Spellcasting', desc: '', spellcasting: { dc: 13, spells: [{ index: spell.index, name: 'Hex Bolt', level: 1, usage: 'atWill' }] } }]
+    await db.homebrewSpells.add(spell)
+    await db.homebrewMonsters.add(monster)
+
+    const file = JSON.parse(JSON.stringify(await exportHomebrew()))
+    // Unchanged entries already in this browser aren't copied again.
+    expect(await importCampaigns(file)).toEqual({ campaigns: 0, monsters: 0, spells: 0 })
+    // After editing, importing the old file adds copies.
+    await db.homebrewSpells.update(spell.index, { updatedAt: 1 })
+    await db.homebrewMonsters.update(monster.index, { updatedAt: 1 })
+    expect(await importCampaigns(file)).toEqual({ campaigns: 0, monsters: 1, spells: 1 })
+    const copySpell = (await db.homebrewSpells.toArray()).find((s) => s.index !== spell.index)!
+    const copyMonster = (await db.homebrewMonsters.toArray()).find((m) => m.index !== monster.index)!
+    expect(copyMonster.actions?.[0].spellcasting?.spells[0].index).toBe(copySpell.index)
+  })
+
+  it('restores deleted homebrew with its original index, so links still work', async () => {
+    const spell = { ...blankSpell('both'), name: 'Hex Bolt' }
+    await db.homebrewSpells.add(spell)
+    const file = JSON.parse(JSON.stringify(await exportHomebrew()))
+    await db.homebrewSpells.delete(spell.index)
+    expect(await importCampaigns(file)).toEqual({ campaigns: 0, monsters: 0, spells: 1 })
+    expect((await db.homebrewSpells.get(spell.index))?.name).toBe('Hex Bolt')
   })
 
   it('rejects files that are not backups', async () => {

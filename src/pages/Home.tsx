@@ -6,7 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, QUICK_COMBAT } from '../db'
 import type { Campaign } from '../types'
 import { createCampaign, deleteCampaign, getCombat } from '../lib/store'
-import { downloadBackup, exportCampaigns, importCampaigns } from '../lib/backup'
+import { describeImport, downloadBackup, exportCampaigns, importCampaigns } from '../lib/backup'
 
 export function Home() {
   // Most recently opened first, like ORDER BY lastOpenedAt DESC.
@@ -115,8 +115,8 @@ function BackupPanel({ hasCampaigns }: { hasCampaigns: boolean }) {
 
   async function importFile(file: File) {
     try {
-      const count = await importCampaigns(JSON.parse(await file.text()))
-      setMessage({ text: `Imported ${count} ${count === 1 ? 'campaign' : 'campaigns'}.` })
+      const result = await importCampaigns(JSON.parse(await file.text()))
+      setMessage({ text: `Imported ${describeImport(result)}.` })
     } catch (e) {
       setMessage({ text: e instanceof SyntaxError ? 'That file is not valid JSON.' : (e as Error).message, error: true })
     }

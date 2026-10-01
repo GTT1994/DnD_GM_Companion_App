@@ -1,9 +1,12 @@
-// Loads the SRD rules data (monsters, spells, etc.) for each edition.
-// The JSON files in ./srd are built by scripts/build-srd.mjs. Each file is only
-// downloaded by the browser the first time it's needed, which keeps the app fast to open.
+// Loads the SRD rules data (monsters, spells, etc.) for each edition, with the GM's homebrew
+// monsters and spells mixed in. The JSON files in ./srd are built by scripts/build-srd.mjs.
+// Each file is only downloaded by the browser the first time it's needed, which keeps the app fast to open.
 
 import { useEffect, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import type { Edition } from '../types'
+import { db } from '../db'
+import { homebrewToSpell, matchesEdition } from '../lib/homebrew'
 
 // One part of an action's damage, e.g. 1d6+2 Slashing.
 export type DamagePart = {
@@ -45,6 +48,7 @@ export type Feature = {
 export type Monster = {
   index: string
   name: string
+  homebrew?: boolean     // true for the GM's own monsters
   meta: string           // size, type and alignment, e.g. "Small, humanoid, neutral evil"
   ac: number
   acNote?: string
@@ -72,6 +76,7 @@ export type Monster = {
 export type Spell = {
   index: string
   name: string
+  homebrew?: boolean     // true for the GM's own spells
   level: number          // 0 = cantrip
   school: string
   castingTime: string
@@ -126,7 +131,18 @@ export async function loadSrd<C extends Category>(edition: Edition, category: C)
   return cache.get(path) as SrdData[C][]
 }
 
-// React hook: returns the entries for a category, or null while they're still loading.
+// Homebrew entries for a category and edition (only monsters and spells can be homebrew).
+async function loadHomebrew(edition: Edition, category: Category): Promise<unknown[]> {
+  if (category === 'monsters') {
+    return (await db.homebrewMonsters.toArray()).filter((m) => matchesEdition(m.edition, edition))
+  }
+  if (category === 'spells') {
+    return (await db.homebrewSpells.toArray()).filter((s) => matchesEdition(s.edition, edition)).map(homebrewToSpell)
+  }
+  return []
+}
+
+// React hook: returns the entries for a category (SRD plus homebrew, by name), or null while they're still loading.
 export function useSrd<C extends Category>(edition: Edition, category: C): SrdData[C][] | null {
   const key = `${edition}/${category}`
   const [loaded, setLoaded] = useState<{ key: string; data: SrdData[C][] } | null>(null)
@@ -141,6 +157,13 @@ export function useSrd<C extends Category>(edition: Edition, category: C): SrdDa
     }
   }, [edition, category, key])
 
+  // Re-runs whenever homebrew is added, edited or deleted.
+  const homebrew = useLiveQuery(() => loadHomebrew(edition, category), [edition, category])
+
   // Only return data that matches what was asked for (not the previous edition's data).
-  return loaded?.key === key ? loaded.data : null
+  const srd = loaded?.key === key ? loaded.data : null
+  if (!srd || !homebrew) return null
+  if (homebrew.length === 0) return srd
+  // Like SELECT ... FROM srd UNION ALL SELECT ... FROM homebrew ORDER BY name.
+  return [...srd, ...(homebrew as SrdData[C][])].sort((a, b) => a.name.localeCompare(b.name))
 }

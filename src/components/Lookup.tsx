@@ -8,6 +8,7 @@ import { quickRulesFor } from '../data/quickRules'
 import { formatCr } from '../lib/dice'
 import { Markdown } from './Markdown'
 import { StatBlock } from './StatBlock'
+import { SpellDetail } from './SpellDetail'
 
 const CATEGORY_LABELS: Record<LookupState['category'], string> = {
   all: 'All',
@@ -34,9 +35,13 @@ type LookupProps = {
   setState: (state: LookupState) => void
   searchRef: RefObject<HTMLInputElement | null>  // lets the ⌘K shortcut focus the search box
   onAddMonster: (monster: Monster, count: number) => Promise<unknown>
+  onHomebrew: (entry: HomebrewTarget) => void  // copy an SRD entry to homebrew, or edit a homebrew one
 }
 
-export function Lookup({ edition, state, setState, searchRef, onAddMonster }: LookupProps) {
+// The monster or spell a "Make homebrew copy" / "Edit homebrew" button acts on.
+export type HomebrewTarget = { kind: 'monster'; entry: Monster } | { kind: 'spell'; entry: Spell }
+
+export function Lookup({ edition, state, setState, searchRef, onAddMonster, onHomebrew }: LookupProps) {
   // Each category loads on first use; null while loading.
   const conditions = useSrd(edition, 'conditions')
   const monsters = useSrd(edition, 'monsters')
@@ -49,8 +54,8 @@ export function Lookup({ edition, state, setState, searchRef, onAddMonster }: Lo
   // Every entry as a list row, like a UNION ALL of the category tables.
   const all: ListItem[] = [
     ...(conditions ?? []).map((c) => ({ category: 'conditions' as const, index: c.index, name: c.name, subtitle: 'Condition' })),
-    ...(monsters ?? []).map((m) => ({ category: 'monsters' as const, index: m.index, name: m.name, subtitle: `CR ${formatCr(m.cr)} · ${m.meta.split(', ')[1]}` })),
-    ...(spells ?? []).map((s) => ({ category: 'spells' as const, index: s.index, name: s.name, subtitle: `${s.level === 0 ? 'Cantrip' : `Level ${s.level}`} · ${s.school}` })),
+    ...(monsters ?? []).map((m) => ({ category: 'monsters' as const, index: m.index, name: m.name, subtitle: `${m.homebrew ? 'Homebrew · ' : ''}CR ${formatCr(m.cr)} · ${m.meta.split(', ')[1]}` })),
+    ...(spells ?? []).map((s) => ({ category: 'spells' as const, index: s.index, name: s.name, subtitle: `${s.homebrew ? 'Homebrew · ' : ''}${s.level === 0 ? 'Cantrip' : `Level ${s.level}`} · ${s.school}` })),
     ...(items ?? []).map((i) => ({ category: 'magic-items' as const, index: i.index, name: i.name, subtitle: `${i.rarity} · ${i.category}` })),
     ...rules.map((r) => ({ category: 'rules' as const, index: r.index, name: r.name, subtitle: r.index.startsWith('quick-') ? 'Quick rule' : 'Rules section' })),
   ]
@@ -112,6 +117,7 @@ export function Lookup({ edition, state, setState, searchRef, onAddMonster }: Lo
           selected={state.selected}
           data={{ conditions, monsters, spells, items, rules }}
           onAddMonster={onAddMonster}
+          onHomebrew={onHomebrew}
         />
       </div>
     </section>
@@ -128,10 +134,11 @@ type DetailProps = {
     rules: TextEntry[]
   }
   onAddMonster: (monster: Monster, count: number) => Promise<unknown>
+  onHomebrew: (entry: HomebrewTarget) => void
 }
 
 // Shows the selected entry, using the right layout for its category.
-function Detail({ selected, data, onAddMonster }: DetailProps) {
+function Detail({ selected, data, onAddMonster, onHomebrew }: DetailProps) {
   if (!selected) return <p className="empty">Pick something from the list to see it here.</p>
 
   const find = <T extends { index: string }>(list: T[] | null) => list?.find((x) => x.index === selected.index)
@@ -140,11 +147,20 @@ function Detail({ selected, data, onAddMonster }: DetailProps) {
   switch (selected.category) {
     case 'monsters': {
       const monster = find(data.monsters)
-      return monster ? <StatBlock key={monster.index} monster={monster} onAdd={(n) => onAddMonster(monster, n)} /> : notFound
+      if (!monster) return notFound
+      return (
+        <StatBlock
+          key={monster.index}
+          monster={monster}
+          onAdd={(n) => onAddMonster(monster, n)}
+          extra={<HomebrewButton homebrew={monster.homebrew} onClick={() => onHomebrew({ kind: 'monster', entry: monster })} />}
+        />
+      )
     }
     case 'spells': {
       const spell = find(data.spells)
-      return spell ? <SpellDetail spell={spell} /> : notFound
+      if (!spell) return notFound
+      return <SpellDetail spell={spell} extra={<HomebrewButton homebrew={spell.homebrew} onClick={() => onHomebrew({ kind: 'spell', entry: spell })} />} />
     }
     case 'magic-items': {
       const item = find(data.items)
@@ -171,20 +187,7 @@ function Detail({ selected, data, onAddMonster }: DetailProps) {
   }
 }
 
-function SpellDetail({ spell: s }: { spell: Spell }) {
-  const level = s.level === 0 ? `${s.school} cantrip` : `Level ${s.level} ${s.school.toLowerCase()}`
-  return (
-    <article>
-      <h2>{s.name}</h2>
-      <p className="meta">{level}{s.ritual ? ' (ritual)' : ''}</p>
-      <p className="line"><strong>Casting Time</strong> {s.castingTime}</p>
-      <p className="line"><strong>Range</strong> {s.range}</p>
-      <p className="line"><strong>Components</strong> {s.components}</p>
-      <p className="line"><strong>Duration</strong> {s.concentration ? `Concentration, ${s.duration.replace(/^Concentration, /i, '')}` : s.duration}</p>
-      <div className="rule" />
-      <Markdown text={s.desc} />
-      {s.higherLevel && <Markdown text={`**At Higher Levels.** ${s.higherLevel}`} />}
-      <p className="meta">Classes: {s.classes.join(', ')}</p>
-    </article>
-  )
+// "Edit homebrew" for the GM's own entries, "Make homebrew copy" for SRD ones.
+function HomebrewButton({ homebrew, onClick }: { homebrew?: boolean; onClick: () => void }) {
+  return <button type="button" onClick={onClick}>{homebrew ? 'Edit homebrew' : 'Make homebrew copy'}</button>
 }

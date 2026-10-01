@@ -64,7 +64,14 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
       </div>
 
       {!combatant.monster && <QuickRoller ctx={ctx} />}
-      {combatant.monster && !monster && <p className="meta">{monsters ? 'Monster not found in the rules data.' : 'Loading…'}</p>}
+      {combatant.monster && !monster && !monsters && <p className="meta">Loading…</p>}
+      {/* e.g. a homebrew monster deleted after being added to the fight */}
+      {combatant.monster && !monster && monsters && (
+        <>
+          <p className="meta">This monster isn't in the {edition} rules or your homebrew any more, so here's a quick roller instead.</p>
+          <QuickRoller ctx={ctx} />
+        </>
+      )}
 
       {monster && (
         <>

@@ -17,6 +17,8 @@ import { LookupPage } from './pages/LookupPage'
 import { GeneratorsPage } from './pages/GeneratorsPage'
 import { NpcsPage } from './pages/NpcsPage'
 import { NotesPage } from './pages/NotesPage'
+import { HomebrewPage } from './pages/HomebrewPage'
+import { MonsterEditorPage, SpellEditorPage } from './pages/HomebrewEditorPages'
 
 function App() {
   // Small preferences stay in localStorage; campaign data lives in the database.
@@ -39,6 +41,9 @@ function App() {
             <Route path="quick-combat" element={<CombatPage combatId={QUICK_COMBAT} />} />
             <Route path="lookup" element={<LookupPage />} />
             <Route path="generators" element={<GeneratorsPage />} />
+            <Route path="homebrew" element={<HomebrewPage />} />
+            <Route path="homebrew/monster/:index" element={<MonsterEditorPage />} />
+            <Route path="homebrew/spell/:index" element={<SpellEditorPage />} />
             <Route path="campaign/:campaignId" element={<CampaignLayout />}>
               <Route index element={<Overview />} />
               <Route path="combat" element={<CampaignCombat />} />
@@ -90,12 +95,14 @@ function Layout() {
         { to: `${base}/notes`, label: 'Notes' },
         { to: `${base}/lookup`, label: 'Quick Lookup' },
         { to: `${base}/generators`, label: 'Generators' },
+        { to: '/homebrew', label: 'Homebrew' },  // shared by every campaign
       ]
     : [
         { to: '/', label: 'Home', end: true },
         { to: '/quick-combat', label: 'Quick combat' },
         { to: '/lookup', label: 'Quick Lookup' },
         { to: '/generators', label: 'Generators' },
+        { to: '/homebrew', label: 'Homebrew' },
       ]
 
   return (
