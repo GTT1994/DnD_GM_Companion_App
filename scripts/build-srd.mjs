@@ -1,0 +1,192 @@
+// Downloads the SRD rules data (2014 and 2024 editions) from the 5e-bits/5e-database
+// project and trims it down to the fields the app uses, writing one JSON file per
+// category to src/data/srd/<edition>/. Run with: npm run srd
+
+import { mkdir, writeFile } from 'node:fs/promises'
+
+const SOURCE = 'https://raw.githubusercontent.com/5e-bits/5e-database/main/src'
+const OUT_DIR = new URL('../src/data/srd/', import.meta.url)
+
+// Fetches one source file, e.g. load('2014', 'Monsters').
+async function load(edition, name) {
+  const res = await fetch(`${SOURCE}/${edition}/en/5e-SRD-${name}.json`)
+  if (!res.ok) throw new Error(`Failed to download ${edition} ${name}: ${res.status}`)
+  return res.json()
+}
+
+// Some text fields are arrays of paragraphs in 2014 and single strings in 2024.
+function toText(value, separator = '\n\n') {
+  if (value == null) return undefined
+  return Array.isArray(value) ? value.join(separator) : value
+}
+
+// "1 action" (2014) and "Action" (2024) both shown as written, with the first letter capitalised.
+const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1)
+
+const signed = (n) => (n >= 0 ? `+${n}` : `${n}`)
+
+// --- Monsters ---------------------------------------------------------------
+
+// Turns a usage object into the usual stat block suffix, e.g. "Recharge 5–6" or "3/Day".
+function usageLabel(usage) {
+  if (!usage) return ''
+  if (usage.type === 'recharge on roll') {
+    return usage.min_value === 6 ? 'Recharge 6' : `Recharge ${usage.min_value}–6`
+  }
+  if (usage.type === 'per day') {
+    return usage.times_in_lair
+      ? `${usage.times}/Day, or ${usage.times_in_lair}/Day in Lair`
+      : `${usage.times}/Day`
+  }
+  if (usage.type === 'recharge after rest') {
+    return `Recharges after a ${usage.rest_types.map(capitalise).join(' or ')} Rest`
+  }
+  return ''
+}
+
+// Keeps just the name and description of each trait or action.
+function abilities(list) {
+  if (!list?.length) return undefined
+  return list.map((a) => {
+    const usage = usageLabel(a.usage)
+    return { name: usage ? `${a.name} (${usage})` : a.name, desc: a.desc }
+  })
+}
+
+// Builds "Con +6, Int +8" (saves) or "History +12, Perception +10" (skills) from the proficiency list.
+function proficiencyList(proficiencies, prefix) {
+  const items = proficiencies
+    .filter((p) => p.proficiency.name.startsWith(prefix))
+    .map((p) => {
+      const name = p.proficiency.name.slice(prefix.length)
+      const label = prefix === 'Saving Throw: ' ? capitalise(name.toLowerCase()) : name
+      return `${label} ${signed(p.value)}`
+    })
+  return items.length ? items.join(', ') : undefined
+}
+
+function speedText(speed) {
+  return Object.entries(speed)
+    .map(([kind, value]) => {
+      if (kind === 'hover') return value ? '(hover)' : ''
+      return kind === 'walk' ? value : `${kind} ${value}`
+    })
+    .filter(Boolean)
+    .join(', ')
+}
+
+function sensesText(senses) {
+  return Object.entries(senses)
+    .map(([kind, value]) => (kind === 'passive_perception' ? `passive Perception ${value}` : `${kind} ${value}`))
+    .join(', ')
+}
+
+function listText(list) {
+  if (!list?.length) return undefined
+  return list.map((x) => (typeof x === 'string' ? x : x.name)).join(', ')
+}
+
+function monster(m) {
+  const ac = m.armor_class[0]
+  // Notes such as "natural armor" or the armour worn, shown in brackets after the AC.
+  const acNote = ac.armor?.map((a) => a.name).join(', ') ?? (ac.type && ac.type !== 'dex' ? `${ac.type} armor` : undefined)
+  return {
+    index: m.index,
+    name: m.name,
+    meta: [m.size, m.subtype ? `${m.type} (${m.subtype})` : m.type, m.alignment].filter(Boolean).join(', '),
+    ac: ac.value,
+    acNote,
+    hp: m.hit_points,
+    hitDice: m.hit_points_roll ?? m.hit_dice,
+    speed: speedText(m.speed),
+    abilities: [m.strength, m.dexterity, m.constitution, m.intelligence, m.wisdom, m.charisma],
+    saves: proficiencyList(m.proficiencies ?? [], 'Saving Throw: '),
+    skills: proficiencyList(m.proficiencies ?? [], 'Skill: '),
+    vulnerabilities: listText(m.damage_vulnerabilities),
+    resistances: listText(m.damage_resistances),
+    immunities: listText(m.damage_immunities),
+    conditionImmunities: listText(m.condition_immunities),
+    senses: sensesText(m.senses),
+    languages: m.languages || undefined,
+    cr: m.challenge_rating,
+    xp: m.xp,
+    traits: abilities(m.special_abilities),
+    actions: abilities(m.actions),
+    bonusActions: abilities(m.bonus_actions),
+    reactions: abilities(m.reactions),
+    legendaryActions: abilities(m.legendary_actions),
+  }
+}
+
+// --- Spells -----------------------------------------------------------------
+
+function spell(s) {
+  const components = s.components.join(', ') + (s.material ? ` (${s.material})` : '')
+  return {
+    index: s.index,
+    name: s.name,
+    level: s.level,
+    school: s.school.name,
+    castingTime: capitalise(s.casting_time),
+    range: s.range,
+    components,
+    duration: s.duration,
+    concentration: s.concentration,
+    ritual: s.ritual,
+    desc: toText(s.desc ?? s.description),
+    higherLevel: toText(s.higher_level),
+    classes: s.classes.map((c) => c.name),
+  }
+}
+
+// --- Conditions, magic items and rules --------------------------------------
+
+function condition(c) {
+  // 2014 gives a list of "- ..." lines; 2024 gives one string with single line breaks.
+  const desc = Array.isArray(c.desc) ? c.desc.join('\n') : c.description.replace(/\n/g, '\n\n')
+  return { index: c.index, name: c.name, desc }
+}
+
+function magicItem(item) {
+  const desc = toText(item.desc)
+  return {
+    index: item.index,
+    name: item.name,
+    rarity: item.rarity.name,
+    category: item.equipment_category.name,
+    attunement: item.attunement ?? /requires attunement/i.test(desc),
+    desc,
+  }
+}
+
+function ruleSection(r) {
+  // Drop the first heading, since the app shows the section name as its own title.
+  return { index: r.index, name: r.name, desc: r.desc.replace(/^#+ .*\n+/, '') }
+}
+
+// --- Build --------------------------------------------------------------------
+
+const byName = (a, b) => a.name.localeCompare(b.name)
+
+async function build(edition) {
+  const dir = new URL(`${edition}/`, OUT_DIR)
+  await mkdir(dir, { recursive: true })
+
+  const files = {
+    monsters: (await load(edition, 'Monsters')).map(monster),
+    spells: (await load(edition, 'Spells')).map(spell),
+    conditions: (await load(edition, 'Conditions')).map(condition),
+    // Skip "parent" items whose rarity depends on the variant (e.g. "Armor, +1, +2, or +3").
+    'magic-items': (await load(edition, 'Magic-Items')).map(magicItem).filter((i) => i.rarity !== 'Varies'),
+  }
+  // The 2024 data has no rule sections yet; the app falls back to its own quick rules.
+  if (edition === '2014') files.rules = (await load(edition, 'Rule-Sections')).map(ruleSection)
+
+  for (const [name, data] of Object.entries(files)) {
+    await writeFile(new URL(`${name}.json`, dir), JSON.stringify(data.sort(byName)))
+    console.log(`${edition}/${name}.json: ${data.length} entries`)
+  }
+}
+
+await build('2014')
+await build('2024')
