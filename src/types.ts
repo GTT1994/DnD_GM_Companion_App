@@ -16,6 +16,7 @@ export type Combatant = {
   isPlayer: boolean     // true = player character, false = monster
   conditions: string[]  // names of active conditions, e.g. "Prone"
   monster?: { edition: Edition; index: string }  // the SRD monster it came from, if any
+  pcId?: string         // the party member it represents, if any (their HP is kept in sync)
 }
 
 // Everything the combat tracker saves between page loads.
@@ -25,9 +26,6 @@ export type CombatState = {
   activeId: string | null  // whose turn it is
 }
 
-// The pages of the app, shown as tabs in the header.
-export type Page = 'combat' | 'lookup' | 'generators'
-
 // The kinds of SRD entry that Quick Lookup can show.
 export type LookupCategory = 'conditions' | 'monsters' | 'spells' | 'magic-items' | 'rules'
 
@@ -36,4 +34,37 @@ export type LookupState = {
   category: LookupCategory | 'all'
   query: string
   selected: { category: LookupCategory; index: string } | null
+}
+
+// A campaign: the top-level folder for a party, their fights, NPCs and notes.
+export type Campaign = {
+  id: string
+  name: string
+  description: string
+  createdAt: number     // milliseconds since 1970, like a DATETIME
+  lastOpenedAt: number
+}
+
+// A player character in a campaign's party.
+export type Pc = {
+  id: string
+  campaignId: string    // which campaign this PC belongs to (a foreign key)
+  name: string
+  playerName: string
+  className: string     // e.g. "Fighter"
+  level: number
+  ac: number
+  maxHp: number
+  currentHp: number     // carries over between fights until healed
+  tempHp: number
+  passivePerception: number
+  passiveInsight: number
+  passiveInvestigation: number
+}
+
+// A campaign's free-text notes page.
+export type Note = {
+  campaignId: string
+  text: string
+  updatedAt: number
 }

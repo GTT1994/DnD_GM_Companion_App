@@ -2,9 +2,17 @@
 
 A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a toolkit for running sessions at the table (combat tracker, quick lookup, random generators) and will grow into an all-in-one GM toolkit covering session prep, encounter building and a campaign wiki.
 
-> **Status:** v0.1 (run the table) is built.
+> **Status:** v0.1 (run the table) and campaigns are built.
 
 ## Features
+
+**Home page and campaigns**
+- Create campaigns, each with its own party, fight, saved NPCs and notes
+- **Quick combat** for one-off fights outside any campaign (remembered until you clear it)
+- Party table with AC, HP and passive Perception / Insight / Investigation, class, level and player
+- PC HP carries over between fights until you heal them or take a **Long rest**
+- **Add party** puts every PC into the campaign's fight at their current HP
+- Export a campaign (or everything) to a backup file, and import it again, e.g. on another computer
 
 **Combat tracker**
 - Add players and custom monsters (leave Initiative blank to roll a d20). Press Enter to add.
@@ -12,7 +20,7 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - Damage, healing and temporary HP (damage uses up temp HP first; HP stays between 0 and max)
 - Conditions from the SRD, plus Concentrating; hover a condition to read it, click it to remove it
 - Edit initiative inline; Clear NPCs keeps the party for the next fight
-- Everything is saved in the browser, so a refresh doesn't lose the fight
+- Everything is saved in the browser's database, so a refresh doesn't lose the fight
 
 **Quick lookup** (press **⌘K** anywhere)
 - Search conditions, monsters, spells, magic items and rules, or all of them at once
@@ -21,7 +29,7 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - Switch between the **2014** and **2024** rules in the top right
 
 **Generators**
-- NPCs: name by ancestry, occupation, looks, personality, mannerism, motivation and a secret
+- NPCs: name by ancestry, occupation, looks, personality, mannerism, motivation and a secret; save the good ones to a campaign
 - Loot: individual treasure or hoards by challenge rating, with gems and SRD magic items (click an item to read it)
 
 ## Goals
@@ -36,8 +44,11 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 ### v0.1: Run the table ✅
 Combat tracker, quick lookup and generators, as above.
 
+### Campaigns ✅
+Home page, campaigns with party, combat, NPCs and notes, Quick combat, backups.
+
 ### v0.2: Quality of life
-- Save and load named encounters
+- Prepare named encounters in advance and load them into a fight
 - Condition durations and concentration reminders
 - Monster stat blocks shown inside the combat tracker
 - Clickable dice rolls in stat blocks
@@ -57,7 +68,8 @@ Combat tracker, quick lookup and generators, as above.
 |---|---|
 | Language | TypeScript |
 | UI | React + Vite |
-| Storage | The browser's localStorage (a database such as IndexedDB/Dexie can come later for the wiki) |
+| Storage | IndexedDB (the browser's built-in database) via [Dexie](https://dexie.org/); small preferences in localStorage |
+| Page addresses | React Router |
 | Rules data | SRD content bundled as JSON, built from [5e-database](https://github.com/5e-bits/5e-database) |
 | Tests | Vitest |
 

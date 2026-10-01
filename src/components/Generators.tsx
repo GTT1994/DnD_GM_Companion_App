@@ -10,21 +10,27 @@ import { useSavedState } from '../lib/storage'
 
 const HISTORY = 8  // how many past results to keep
 
-type GeneratorsProps = {
+// Saving NPCs is only possible inside a campaign.
+type SaveNpcProps = {
+  onSaveNpc?: (npc: Npc) => void
+  isNpcSaved?: (npc: Npc) => boolean
+}
+
+type GeneratorsProps = SaveNpcProps & {
   edition: Edition
   onOpenItem: (index: string) => void  // opens a magic item in Quick Lookup
 }
 
-export function Generators({ edition, onOpenItem }: GeneratorsProps) {
+export function Generators({ edition, onOpenItem, onSaveNpc, isNpcSaved }: GeneratorsProps) {
   return (
     <section className="page generators">
-      <NpcGenerator />
+      <NpcGenerator onSaveNpc={onSaveNpc} isNpcSaved={isNpcSaved} />
       <LootGenerator edition={edition} onOpenItem={onOpenItem} />
     </section>
   )
 }
 
-function NpcGenerator() {
+function NpcGenerator({ onSaveNpc, isNpcSaved }: SaveNpcProps) {
   const [ancestry, setAncestry] = useState<Ancestry | ''>('')  // '' = any
   const [npcs, setNpcs] = useSavedState<Npc[]>('npcs', [])
 
@@ -44,6 +50,13 @@ function NpcGenerator() {
       </div>
       {npcs.map((npc) => (
         <article key={npc.id} className="card">
+          {onSaveNpc && (
+            <div className="card-actions">
+              {isNpcSaved?.(npc)
+                ? <span className="notice">Saved ✓</span>
+                : <button type="button" onClick={() => onSaveNpc(npc)}>Save to campaign</button>}
+            </div>
+          )}
           <h3>{npc.name}</h3>
           <p className="meta">{npc.ancestry} {npc.occupation}</p>
           <ul>
@@ -59,7 +72,7 @@ function NpcGenerator() {
   )
 }
 
-function LootGenerator({ edition, onOpenItem }: GeneratorsProps) {
+function LootGenerator({ edition, onOpenItem }: Pick<GeneratorsProps, 'edition' | 'onOpenItem'>) {
   const [tier, setTier] = useState<Tier>(1)
   const [kind, setKind] = useState<LootKind>('hoard')
   const [loot, setLoot] = useSavedState<Loot[]>('loot', [])

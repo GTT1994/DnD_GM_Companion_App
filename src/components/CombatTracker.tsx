@@ -15,9 +15,10 @@ type CombatTrackerProps = {
   dispatch: Dispatch<CombatAction>
   edition: Edition
   onOpenMonster: (edition: Edition, index: string) => void
+  onAddParty?: () => void  // only given inside a campaign
 }
 
-export function CombatTracker({ combat, dispatch, edition, onOpenMonster }: CombatTrackerProps) {
+export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddParty }: CombatTrackerProps) {
   const conditions = useSrd(edition, 'conditions') ?? []
   const conditionNames = [...conditions.map((c) => c.name), ...EXTRA_CONDITIONS]
   // Condition descriptions without Markdown symbols, for hover tooltips.
@@ -34,6 +35,7 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster }: Comb
           {combat.round === 0 ? 'Not started' : <>Round <strong>{combat.round}</strong>{active && <> · {active.name}'s turn</>}</>}
         </div>
         <div className="toolbar-buttons">
+          {onAddParty && <button type="button" onClick={onAddParty} title="Add every party member not already in the fight">Add party</button>}
           <button type="button" onClick={() => dispatch({ type: 'previousTurn' })} disabled={combat.round === 0}>◀ Previous</button>
           <button type="button" className="primary" onClick={() => dispatch({ type: 'nextTurn' })} disabled={order.length === 0}>
             {combat.round === 0 ? 'Start combat' : 'Next turn ▶'}
@@ -52,13 +54,15 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster }: Comb
       </div>
 
       <AddCombatantForm
+        // In a campaign the party is added with "Add party", so the form is mostly for monsters.
+        defaultIsPlayer={!onAddParty}
         // Number duplicate names, e.g. a second "Bandit" becomes "Bandit 2".
         onAdd={(c) => dispatch({ type: 'add', combatants: [{ ...c, name: uniqueName(c.name, combat.combatants) }] })}
       />
 
       {order.length === 0 ? (
         <p className="empty">
-          No one in the fight yet. Add players above, or add monsters from their stat block in <strong>Quick Lookup</strong>.
+          No one in the fight yet. {onAddParty ? <>Use <strong>Add party</strong>, add</> : 'Add'} combatants above, or add monsters from their stat block in <strong>Quick Lookup</strong> (⌘K).
         </p>
       ) : (
         <table className="tracker">

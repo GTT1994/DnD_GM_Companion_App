@@ -83,6 +83,35 @@ button.primary:hover:not(:disabled) {
 
 button.danger:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
 
+/* A link styled like a button, e.g. "Go to combat". */
+a.button {
+  display: inline-block;
+  padding: 0.35em 0.7em;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+a.button:hover { border-color: var(--gold); background: var(--panel-raised); }
+a.button.primary { background: var(--gold); border-color: var(--gold); color: #1a140b; font-weight: 600; }
+a.button.primary:hover { background: var(--gold-bright); }
+
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6em 0.8em;
+  width: 100%;
+  resize: vertical;
+}
+
+textarea:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+
 /* A button that looks like a link, e.g. monster names in the tracker. */
 button.link {
   background: none;
@@ -119,6 +148,62 @@ input[type='number'] { width: 5.5em; }
   margin: 0.4em 0;
 }
 
+.error {
+  color: var(--red);
+  margin: 0.4em 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.section-header h2 { margin: 0; }
+
+/* Forms shown in a panel: new campaign, add/edit PC */
+.panel-form {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0 1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.panel-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.panel-form label.wide { flex: 1; min-width: 14rem; }
+.panel-form label.wide input { width: 100%; }
+
+/* Buttons in the top-right corner of a card, or along its bottom */
+.card { position: relative; }
+
+.card > .card-actions:first-child {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
 /* --- Layout -------------------------------------------------------------- */
 
 .app {
@@ -136,9 +221,21 @@ input[type='number'] { width: 5.5em; }
   background: linear-gradient(#1f1912, var(--bg));
 }
 
-.app-header h1 {
+.app-title {
+  font-family: var(--heading);
   font-size: 1.4rem;
-  margin: 0;
+  font-weight: 700;
+  color: var(--gold-bright);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.campaign-name {
+  font-family: var(--heading);
+  color: var(--text);
+  padding-left: 1rem;
+  border-left: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 .page-tabs, .edition-switch, .category-tabs {
@@ -148,12 +245,23 @@ input[type='number'] { width: 5.5em; }
 
 .page-tabs { flex: 1; }
 
-.page-tabs button, .category-tabs button {
+.page-tabs a {
+  color: var(--text);
+  text-decoration: none;
+  padding: 0.35em 0.7em;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.page-tabs a:hover { border-color: var(--border); }
+
+.category-tabs button {
   background: none;
   border-color: transparent;
 }
 
-.page-tabs button.selected, .category-tabs button.selected {
+.page-tabs a.selected, .category-tabs button.selected {
   border-color: var(--gold);
   color: var(--gold-bright);
 }
@@ -231,12 +339,12 @@ main {
   padding-bottom: 0.4rem;
 }
 
-.tracker {
+.tracker, .data-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.tracker th {
+.tracker th, .data-table th {
   text-align: left;
   font-weight: 600;
   font-size: 0.8rem;
@@ -247,7 +355,7 @@ main {
   border-bottom: 1px solid var(--border);
 }
 
-.tracker td {
+.tracker td, .data-table td {
   padding: 0.5rem;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
@@ -500,11 +608,69 @@ button.remove:hover:not(:disabled) { border-color: var(--red); color: var(--red)
 .card li { margin: 0.15em 0; }
 .card li strong { color: var(--gold); }
 
+/* --- Home page ------------------------------------------------------------ */
+
+.home {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.campaign-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.campaign-card { display: flex; flex-direction: column; }
+
+.campaign-link {
+  flex: 1;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.campaign-link:hover h3 { text-decoration: underline; }
+.campaign-link p { margin: 0.3em 0; }
+
+.home-side .card h3 { margin-bottom: 0.3em; }
+
+/* --- Campaign pages --------------------------------------------------------- */
+
+.campaign-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table .passive { text-align: center; }
+.data-table td.passive { font-weight: 600; }
+
+.data-table .meta { margin: 0; font-size: 0.85rem; }
+.data-table td.actions-cell { text-align: right; }
+
+.npc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.npc-notes { margin-top: 0.75rem; min-height: 5rem; }
+
+textarea.notes { min-height: 60vh; line-height: 1.6; }
+
 /* --- Smaller screens ----------------------------------------------------- */
 
 @media (max-width: 900px) {
   .app-header { flex-wrap: wrap; gap: 0.75rem; }
-  .lookup, .generators { grid-template-columns: 1fr; }
+  .lookup, .generators, .home { grid-template-columns: 1fr; }
+  .page-tabs { flex-wrap: wrap; }
   .lookup-list { position: static; max-height: 50vh; }
-  .tracker { display: block; overflow-x: auto; }
+  .tracker, .data-table { display: block; overflow-x: auto; }
 }

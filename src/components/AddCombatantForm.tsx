@@ -8,16 +8,17 @@ import { rollDie } from '../lib/dice'
 type AddCombatantFormProps = {
   // Function from the tracker to call with the new combatant when the form is submitted.
   onAdd: (newCombatant: Combatant) => void
+  defaultIsPlayer: boolean  // whether the Player box starts ticked
 }
 
-export function AddCombatantForm({ onAdd }: AddCombatantFormProps) {
+export function AddCombatantForm({ onAdd, defaultIsPlayer }: AddCombatantFormProps) {
   // The box values are kept as text (boxes always give text) and converted when added.
   const [name, setName] = useState('')
   const [initiative, setInitiative] = useState('')
   const [maxHp, setMaxHp] = useState('')
   const [ac, setAc] = useState('')
-  // Left ticked between adds, so adding the whole party is quick.
-  const [isPlayer, setIsPlayer] = useState(true)
+  // Left as it is between adds, so adding several players (or monsters) in a row is quick.
+  const [isPlayer, setIsPlayer] = useState(defaultIsPlayer)
 
   // Builds the new combatant from the boxes, sends it to the tracker, then clears the boxes.
   function handleAdd() {
