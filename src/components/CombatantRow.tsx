@@ -7,9 +7,11 @@ type CombatantRowProps = {
   combatant: Combatant
   // Function from App to call when this combatant's HP changes.
   onHpChange: (id: string, amount: number) => void
+  // Function from App to call when this combatant is removed.
+  onRemove: (id: string) => void
 }
 
-export function CombatantRow({ combatant, onHpChange }: CombatantRowProps) {
+export function CombatantRow({ combatant, onHpChange, onRemove }: CombatantRowProps) {
   return (
     <tr>
       <td>{combatant.name}</td>
@@ -23,6 +25,10 @@ export function CombatantRow({ combatant, onHpChange }: CombatantRowProps) {
       <td>{combatant.ac}</td>
       {/* Ternary works like CASE WHEN: show "Player" if isPlayer is true, otherwise "Monster" */}
       <td>{combatant.isPlayer ? 'Player' : 'Monster'}</td>
+      <td>
+        {/* Button to remove this combatant from the list. Calls the function passed in from App. */}
+        <button onClick={() => onRemove(combatant.id)}>Remove</button>
+      </td>
     </tr>
   )
 }

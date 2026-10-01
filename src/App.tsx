@@ -28,6 +28,11 @@ function App() {
     )
   }
 
+  // Removes a combatant from the list by filtering it out of the array.
+  function removeCombatant(id: string) {
+    setCombatants(combatants.filter((c) => c.id !== id))
+  }
+
 
   return (
     <main>
@@ -41,12 +46,13 @@ function App() {
             <th>HP</th>
             <th>AC</th>
             <th>Type</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {/* One row per combatant, like SELECT ... FROM combatants. key = the row's unique ID. */}
           {combatants.map((combatant) => (
-            <CombatantRow key={combatant.id} combatant={combatant} onHpChange={changeHp} />
+            <CombatantRow key={combatant.id} combatant={combatant} onHpChange={changeHp} onRemove={removeCombatant} />
           ))}
         </tbody>
       </table>
