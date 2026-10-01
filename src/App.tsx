@@ -1,6 +1,9 @@
+// The main app component. Currently shows the combat tracker table.
+
 import { CombatantRow } from './components/CombatantRow'
 import type { Combatant } from './types'
 
+// Sample combatants used until combatants can be added in the app.
 const combatants: Combatant[] = [
   { id: '1', name: 'Thorin', hp: 34, maxHp: 34, ac: 18, initiative: 15, isPlayer: true },
   { id: '2', name: 'Jazz', hp: 20, maxHp: 39, ac: 14, initiative: 11, isPlayer: true },
@@ -13,6 +16,7 @@ function App() {
     <main>
       <h1>Combat Tracker</h1>
       <table>
+        {/* Column headings. Their order must match the cells in CombatantRow. */}
         <thead>
           <tr>
             <th>Name</th>
@@ -23,6 +27,7 @@ function App() {
           </tr>
         </thead>
         <tbody>
+          {/* One row per combatant, like SELECT ... FROM combatants. key = the row's unique ID. */}
           {combatants.map((combatant) => (
             <CombatantRow key={combatant.id} combatant={combatant} />
           ))}

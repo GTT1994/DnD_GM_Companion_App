@@ -19,6 +19,7 @@ The developer is learning this stack while building the app. Their strong skill 
 - When they're stuck, help in stages: a hint, then pseudocode, then full code only if they ask.
 - Review their code like a pull request, explaining *why* a change is better.
 - Give one instruction or ask one question at a time.
+- Every code file starts with a comment saying what it does, and key lines get short inline comments. Include these comments in skeletons, and remind the developer to comment code they write.
 - Commit after each completed step.
 
 ## Learning steps
