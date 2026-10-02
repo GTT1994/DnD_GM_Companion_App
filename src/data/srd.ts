@@ -167,3 +167,11 @@ export function useSrd<C extends Category>(edition: Edition, category: C): SrdDa
   // Like SELECT ... FROM srd UNION ALL SELECT ... FROM homebrew ORDER BY name.
   return [...srd, ...(homebrew as SrdData[C][])].sort((a, b) => a.name.localeCompare(b.name))
 }
+
+// Finds the stat block for any combatant, whichever edition it was added from (SRD or homebrew).
+// Returns undefined for creatures added by hand, or while the data is loading.
+export function useMonsterLookup(): (ref: { edition: Edition; index: string } | undefined) => Monster | undefined {
+  const by2014 = useSrd('2014', 'monsters')
+  const by2024 = useSrd('2024', 'monsters')
+  return (ref) => (ref ? (ref.edition === '2014' ? by2014 : by2024)?.find((m) => m.index === ref.index) : undefined)
+}

@@ -7,6 +7,7 @@ import {
   availableSlotLevels, slotKey, spellAttackBonus, spellDamageDice, spellHealDice, spellKey,
 } from '../lib/actions'
 import { abilityMod, signed } from '../lib/dice'
+import { toAbility } from '../lib/saves'
 import { Markdown } from './Markdown'
 import { DamageRoller, ToHit, type RollContext } from './RollWidgets'
 import { FeatureUsage, UsePips } from './UseTracking'
@@ -179,6 +180,23 @@ function SpellRow({ ms, spell, sc, featureName, monster, ctx, expanded, onToggle
               {spell.saveAbility && sc.dc !== undefined && (
                 <p className="chips">
                   <span className="chip-static">DC {sc.dc} {spell.saveAbility} save{spell.saveSuccess === 'half' ? ', half on success' : ''}</span>
+                  {toAbility(spell.saveAbility) && (
+                    <button
+                      type="button"
+                      className="small"
+                      onClick={() => ctx.openGroupSave({
+                        label: `${ctx.self.name} · ${ms.name}`,
+                        sourceId: ctx.self.id,
+                        ability: toAbility(spell.saveAbility),
+                        dc: sc.dc,
+                        damage: damageDice,
+                        damageType: spell.damageType,
+                        onSuccess: spell.saveSuccess === 'half' ? 'half' : 'none',
+                      })}
+                    >
+                      Group save
+                    </button>
+                  )}
                 </p>
               )}
               {damageDice && (

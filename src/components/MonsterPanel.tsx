@@ -3,11 +3,13 @@
 // Monsters added by hand (not from the SRD) get a quick dice roller instead.
 
 import { useState, type Dispatch, type ReactNode } from 'react'
-import type { CombatState, Combatant } from '../types'
-import { useSrd, type Feature, type Spellcasting } from '../data/srd'
+import type { Ability, CombatState, Combatant } from '../types'
+import { useSrd, type Feature, type Monster, type Spellcasting } from '../data/srd'
 import { sortByInitiative, type CombatAction } from '../lib/combat'
 import { defaultIncluded, LEGENDARY_KEY, type D20Mode } from '../lib/actions'
-import { parseDice } from '../lib/dice'
+import { parseDice, signed } from '../lib/dice'
+import { stripUsageLabel } from '../lib/homebrew'
+import { ABILITIES, rollSave, saveBonus, toAbility, type GroupSavePreset } from '../lib/saves'
 import { Markdown } from './Markdown'
 import { DamageRoller, ToHit, type RollContext } from './RollWidgets'
 import { SpellcastingCard } from './SpellcastingCard'
@@ -19,9 +21,10 @@ type MonsterPanelProps = {
   dispatch: Dispatch<CombatAction>
   onClose: () => void
   onOpenStatBlock: () => void
+  onGroupSave: (preset: GroupSavePreset) => void
 }
 
-export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatBlock }: MonsterPanelProps) {
+export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatBlock, onGroupSave }: MonsterPanelProps) {
   const [mode, setMode] = useState<D20Mode>('normal')
   // Load the rules data for the edition this monster was added from.
   const edition = combatant.monster?.edition ?? '2024'
@@ -35,6 +38,7 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
     mode,
     dispatch,
     log: (text) => dispatch({ type: 'log', entry: { id: crypto.randomUUID(), text } }),
+    openGroupSave: onGroupSave,
   }
 
   // Spellcasting traits (2014) are shown up front; the other traits are tucked away below.
@@ -54,8 +58,8 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
         <button type="button" className="remove" onClick={onClose} aria-label="Close panel">✕</button>
       </header>
 
-      {/* Advantage / disadvantage for every to-hit roll in the panel */}
-      <div className="mode-switch" role="group" aria-label="Attack roll mode">
+      {/* Advantage / disadvantage for every to-hit roll and save in the panel */}
+      <div className="mode-switch" role="group" aria-label="Roll mode">
         {(['disadvantage', 'normal', 'advantage'] as const).map((m) => (
           <button key={m} type="button" className={mode === m ? 'selected' : ''} onClick={() => setMode(m)}>
             {m === 'normal' ? 'Normal' : m === 'advantage' ? 'Advantage' : 'Disadvantage'}
@@ -75,6 +79,7 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
 
       {monster && (
         <>
+          <SavingThrows monster={monster} ctx={ctx} />
           <FeatureSection title="Spellcasting" features={spellTraits} render={(f) => <SpellcastingCard feature={f as SpellFeature} monster={monster} spells={spells} ctx={ctx} />} />
           <FeatureSection title="Actions" features={monster.actions} render={(f) => renderFeature(f)} />
           <FeatureSection title="Bonus Actions" features={monster.bonusActions} render={(f) => renderFeature(f)} />
@@ -143,6 +148,24 @@ function ActionCard({ feature, ctx, legendary }: ActionCardProps) {
             DC {feature.dc.value} {feature.dc.ability}{feature.attack === undefined ? ' save' : ''}
             {feature.dc.success === 'half' && feature.attack === undefined ? ', half on success' : ''}
           </span>
+          {/* Save effects that hit several creatures, e.g. a breath weapon */}
+          {feature.attack === undefined && toAbility(feature.dc.ability) && (
+            <button
+              type="button"
+              className="small"
+              onClick={() => ctx.openGroupSave({
+                label: `${ctx.self.name} · ${stripUsageLabel(feature.name)}`,
+                sourceId: ctx.self.id,
+                ability: toAbility(feature.dc!.ability),
+                dc: feature.dc!.value,
+                damage: feature.damage?.[0]?.dice,
+                damageType: feature.damage?.[0]?.type,
+                onSuccess: feature.dc!.success === 'half' ? 'half' : 'none',
+              })}
+            >
+              Group save
+            </button>
+          )}
         </p>
       )}
       {feature.attack !== undefined && <ToHit label={feature.name} bonus={feature.attack} ctx={ctx} onRolled={setCrit} />}
@@ -206,6 +229,35 @@ function LegendarySection({ features, ctx }: { features: Feature[]; ctx: RollCon
           />
         )
       })}
+    </section>
+  )
+}
+
+// Six saving throw buttons, using the stat block's proficiencies and the panel's roll mode.
+function SavingThrows({ monster, ctx }: { monster: Monster; ctx: RollContext }) {
+  const [last, setLast] = useState<{ ability: Ability; total: number; detail: string } | null>(null)
+
+  function roll(ability: Ability) {
+    const bonus = saveBonus(monster, ability)
+    const r = rollSave(bonus, 0, ctx.mode)
+    const detail = `${r.rolls.length > 1 ? `${r.rolls.join(' & ')} → ` : ''}${r.natural} ${signed(bonus)}`
+    setLast({ ability, total: r.total, detail })
+    ctx.log(`${ctx.self.name} · ${ability} save: ${r.total} (${detail}${ctx.mode !== 'normal' ? `, ${ctx.mode}` : ''})`)
+  }
+
+  return (
+    <section className="panel-section saving-throws">
+      <h3>Saving throws</h3>
+      <div className="save-buttons">
+        {ABILITIES.map((a) => (
+          <button key={a} type="button" className="small" onClick={() => roll(a)}>{a} {signed(saveBonus(monster, a))}</button>
+        ))}
+      </div>
+      {last && (
+        <p className="roll-result save-result">
+          {last.ability} save <strong>{last.total}</strong> <span className="meta">({last.detail})</span>
+        </p>
+      )}
     </section>
   )
 }

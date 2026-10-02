@@ -436,6 +436,80 @@ main {
   color: var(--text-dim);
 }
 
+.chip-timer { color: var(--text-dim); font-size: 0.75rem; }
+
+/* The duration form that opens under "+ Condition" */
+.conditions { position: relative; }
+.condition-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 15rem;
+  margin-top: 0.25rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--panel-raised);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+.condition-popover strong { color: var(--amber); }
+
+.duration-fields { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.tiny-input { width: 4.5em; }
+.popover-buttons { display: flex; gap: 0.4rem; margin-top: 0.3rem; }
+
+/* Conditions that just ended, and saves waiting for the GM */
+.turn-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.alert-notices, .alert-save {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  background: var(--panel);
+}
+.alert-notices { border: 1px solid var(--green); color: var(--green); }
+.alert-notices ul { margin: 0; padding-left: 1.1rem; }
+.alert-save { border: 1px solid var(--amber); }
+.alert-buttons { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+/* Group save */
+.group-save { border-color: var(--gold); }
+.group-save-header { display: flex; justify-content: space-between; align-items: center; }
+.group-save-header h3 { margin: 0; }
+.group-save-fields, .group-save-condition {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem 0.9rem;
+  margin: 0.6rem 0;
+}
+.group-save label:not(.checkbox) { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: var(--text-dim); }
+.group-save label.invalid input { border-color: var(--red); }
+.group-save-targets { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem; margin: 0.6rem 0; }
+.target-chip { padding: 0.15rem 0.5rem; border: 1px solid var(--border); border-radius: 999px; font-size: 0.85rem; }
+.group-save-results { margin: 0.5rem 0; }
+.group-save-results td { padding: 0.35rem 0.5rem; }
+.group-damage { color: var(--red); font-size: 1.1rem; }
+.group-amount { color: var(--red); font-weight: 600; }
+
+/* Saving throw buttons in the actions panel */
+.save-buttons { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.3rem; }
+.save-buttons button { padding: 0.3em 0.2em; }
+.save-result { margin: 0.4rem 0 0; display: block; }
+
 .actions-cell {
   white-space: nowrap;
 }

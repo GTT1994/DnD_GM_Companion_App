@@ -54,6 +54,7 @@ export default async function ({ page, base, shot }) {
   await thorin.getByText('34 / 34').waitFor()
 
   await thorin.locator('.condition-select').selectOption('Prone')
+  await thorin.locator('.condition-popover').getByRole('button', { name: 'Add' }).click()  // "Until removed"
   await thorin.locator('.chip', { hasText: 'Prone' }).waitFor()
 
   // Everything survives a refresh.

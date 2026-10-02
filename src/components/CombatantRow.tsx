@@ -4,6 +4,8 @@
 import { useState, type Dispatch } from 'react'
 import type { Combatant } from '../types'
 import type { CombatAction } from '../lib/combat'
+import { timerLabel } from '../lib/conditions'
+import { ConditionPicker } from './ConditionPicker'
 
 type CombatantRowProps = {
   combatant: Combatant
@@ -11,11 +13,13 @@ type CombatantRowProps = {
   isSelected: boolean                   // true when its actions panel is open
   conditionNames: string[]              // conditions that can be added
   conditionHelp: Record<string, string> // short description of each condition, shown on hover
+  combatants: Combatant[]               // everyone in the fight, in turn order (for durations)
+  activeId: string | null
   dispatch: Dispatch<CombatAction>      // sends changes to the tracker
   onSelect: () => void                  // opens the actions panel (monsters only)
 }
 
-export function CombatantRow({ combatant: c, isActive, isSelected, conditionNames, conditionHelp, dispatch, onSelect }: CombatantRowProps) {
+export function CombatantRow({ combatant: c, isActive, isSelected, conditionNames, conditionHelp, combatants, activeId, dispatch, onSelect }: CombatantRowProps) {
   // The text in the HP amount box, used by the Damage / Heal / Temp buttons.
   const [amount, setAmount] = useState('')
   const value = parseInt(amount)
@@ -74,29 +78,29 @@ export function CombatantRow({ combatant: c, isActive, isSelected, conditionName
       </td>
       <td>
         <div className="conditions">
-          {/* Each condition chip removes itself when clicked */}
-          {c.conditions.map((name) => (
-            <button
-              key={name}
-              type="button"
-              className="chip"
-              title={`${conditionHelp[name] ?? name}\n\nClick to remove`}
-              onClick={() => dispatch({ type: 'toggleCondition', id: c.id, condition: name })}
-            >
-              {name} ✕
-            </button>
-          ))}
-          <select
-            className="condition-select"
-            value=""
-            aria-label={`Add condition to ${c.name}`}
-            onChange={(e) => dispatch({ type: 'toggleCondition', id: c.id, condition: e.target.value })}
-          >
-            <option value="">+ Condition</option>
-            {conditionNames
-              .filter((name) => !c.conditions.includes(name))
-              .map((name) => <option key={name}>{name}</option>)}
-          </select>
+          {/* Each condition chip shows its duration, and removes itself when clicked */}
+          {c.conditions.map((name) => {
+            const timer = c.timers?.[name]
+            return (
+              <button
+                key={name}
+                type="button"
+                className={`chip ${timer ? 'timed' : ''}`}
+                title={`${conditionHelp[name] ?? name}\n\nClick to remove`}
+                onClick={() => dispatch({ type: 'toggleCondition', id: c.id, condition: name })}
+              >
+                {name}
+                {timer && <span className="chip-timer"> · {timerLabel(timer, c, combatants)}</span>} ✕
+              </button>
+            )
+          })}
+          <ConditionPicker
+            self={c}
+            available={conditionNames.filter((name) => !c.conditions.includes(name))}
+            combatants={combatants}
+            defaultOwnerId={activeId ?? c.id}
+            onAdd={(condition, timer) => dispatch({ type: 'addCondition', id: c.id, condition, timer })}
+          />
         </div>
       </td>
       <td className="actions-cell">

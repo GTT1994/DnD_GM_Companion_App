@@ -120,3 +120,81 @@ describe('monster ability tracking', () => {
     expect(combatReducer(state, { type: 'endCombat' }).log).toEqual([])
   })
 })
+
+describe('condition durations', () => {
+  // a (20) → b (15) → c (5), round 1, a's turn.
+  const next = (s: CombatState, times = 1) => Array.from({ length: times }).reduce<CombatState>((acc) => combatReducer(acc, { type: 'nextTurn' }), s)
+  const conditionsOf = (s: CombatState, id: string) => s.combatants.find((x) => x.id === id)!.conditions
+
+  it('counts rounds down at the end of the creature’s own turns', () => {
+    const s = combatReducer(started, { type: 'addCondition', id: 'b', condition: 'Restrained', timer: { kind: 'rounds', rounds: 2 } })
+    const afterB1 = next(s, 2)  // b's turn ends once
+    expect(afterB1.combatants.find((x) => x.id === 'b')!.timers!.Restrained).toMatchObject({ rounds: 1 })
+    const afterB2 = next(afterB1, 3)  // b's turn ends again → gone
+    expect(conditionsOf(afterB2, 'b')).toEqual([])
+    expect(afterB2.notices).toEqual(['b is no longer Restrained'])
+    expect(afterB2.log?.[0].text).toBe('b is no longer Restrained')
+  })
+
+  it('does not count the turn a timer was set in', () => {
+    // On b's own turn, "1 round" lasts until the end of its next turn.
+    const onB = next(started)
+    const s = combatReducer(onB, { type: 'addCondition', id: 'b', condition: 'Prone', timer: { kind: 'rounds', rounds: 1 } })
+    expect(conditionsOf(next(s), 'b')).toEqual(['Prone'])     // this turn ends: skipped
+    expect(conditionsOf(next(s, 4), 'b')).toEqual([])          // its next turn ends
+  })
+
+  it("ends at the start or end of someone else's turn", () => {
+    // Set on a's turn: "until the end of a's next turn" skips this one; "until the start of c's turn" ends when c starts.
+    let s = combatReducer(started, { type: 'addCondition', id: 'b', condition: 'Stunned', timer: { kind: 'turn', when: 'end', ownerId: 'a' } })
+    s = combatReducer(s, { type: 'addCondition', id: 'b', condition: 'Frightened', timer: { kind: 'turn', when: 'start', ownerId: 'c' } })
+    s = next(s, 2)  // a ends (skipped), b ends, c starts
+    expect(conditionsOf(s, 'b')).toEqual(['Stunned'])
+    expect(s.notices).toEqual(['b is no longer Frightened'])
+    s = next(s)     // c ends, a's next turn starts
+    expect(conditionsOf(s, 'b')).toEqual(['Stunned'])
+    s = next(s)     // a's next turn ends
+    expect(conditionsOf(s, 'b')).toEqual([])
+  })
+
+  it('asks for a save at the end of the creature’s turn; a success ends the condition', () => {
+    let s = combatReducer(started, { type: 'addCondition', id: 'b', condition: 'Paralyzed', timer: { kind: 'save', ability: 'Wis', dc: 15 } })
+    s = next(s, 2)  // b's turn ends
+    expect(s.pendingSaves).toMatchObject([{ combatantId: 'b', ability: 'Wis', dc: 15, condition: 'Paralyzed', reason: 'ends' }])
+    const failed = combatReducer(s, { type: 'resolveSave', saveId: s.pendingSaves![0].id, passed: false, detail: '9' })
+    expect(conditionsOf(failed, 'b')).toEqual(['Paralyzed'])
+    expect(failed.pendingSaves).toEqual([])
+    expect(failed.log?.[0].text).toBe('b fails the Wis save (DC 15, rolled 9): still Paralyzed')
+    const passed = combatReducer(s, { type: 'resolveSave', saveId: s.pendingSaves![0].id, passed: true })
+    expect(conditionsOf(passed, 'b')).toEqual([])
+  })
+
+  it('removing the condition, the creature or ending combat clears timers and saves', () => {
+    let s = combatReducer(started, { type: 'addCondition', id: 'b', condition: 'Paralyzed', timer: { kind: 'save', ability: 'Wis', dc: 15 } })
+    s = combatReducer(s, { type: 'addCondition', id: 'c', condition: 'Stunned', timer: { kind: 'turn', when: 'end', ownerId: 'b' } })
+    s = next(s, 2)
+    expect(combatReducer(s, { type: 'toggleCondition', id: 'b', condition: 'Paralyzed' }).pendingSaves).toEqual([])
+    const withoutB = combatReducer(s, { type: 'remove', id: 'b' })
+    expect(withoutB.pendingSaves).toEqual([])
+    expect(withoutB.combatants.find((x) => x.id === 'c')!.timers).toEqual({})  // b's turn will never come
+    const ended = combatReducer(s, { type: 'endCombat' })
+    expect(ended.pendingSaves).toEqual([])
+    expect(ended.combatants.every((x) => x.conditions.length === 0)).toBe(true)
+  })
+
+  it('damage while concentrating waits for a Con save; failing it ends concentration', () => {
+    let s = combatReducer(started, { type: 'concentrate', id: 'b', spell: 'Fly' })
+    s = combatReducer(s, { type: 'damage', id: 'b', amount: 30 })
+    expect(s.pendingSaves).toMatchObject([{ ability: 'Con', dc: 15, condition: 'Concentrating: Fly', reason: 'concentration' }])
+    const kept = combatReducer(s, { type: 'resolveSave', saveId: s.pendingSaves![0].id, passed: true })
+    expect(conditionsOf(kept, 'b')).toEqual(['Concentrating: Fly'])
+    const lost = combatReducer(s, { type: 'resolveSave', saveId: s.pendingSaves![0].id, passed: false })
+    expect(conditionsOf(lost, 'b')).toEqual([])
+    expect(lost.log?.[0].text).toMatch(/loses concentration on Fly/)
+  })
+
+  it('applies a batch of changes in order', () => {
+    const s = combatReducer(started, { type: 'batch', actions: [{ type: 'damage', id: 'b', amount: 4 }, { type: 'damage', id: 'c', amount: 2 }] })
+    expect(s.combatants.map((x) => x.hp)).toEqual([8, 10, 6])
+  })
+})

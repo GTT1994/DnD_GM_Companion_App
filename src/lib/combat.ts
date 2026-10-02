@@ -3,8 +3,9 @@
 // procedure that takes the table and a command, and returns the updated table.
 // It never edits the old state, so React can tell something changed.
 
-import type { CombatState, Combatant, LogEntry } from '../types'
+import type { CombatState, Combatant, ConditionTimer, LogEntry } from '../types'
 import { concentrationDc, LEGENDARY_KEY } from './actions'
+import { addCondition, endOfTurn, forgetRemoved, removeCondition, startOfTurn } from './conditions'
 
 export type CombatAction =
   | { type: 'add'; combatants: Combatant[] }
@@ -14,6 +15,11 @@ export type CombatAction =
   | { type: 'setTempHp'; id: string; amount: number }
   | { type: 'setInitiative'; id: string; initiative: number }
   | { type: 'toggleCondition'; id: string; condition: string }
+  | { type: 'addCondition'; id: string; condition: string; timer?: ConditionTimer }  // add, or change its timer
+  | { type: 'resolveSave'; saveId: string; passed: boolean; detail?: string }       // a waiting save was made or failed
+  | { type: 'dismissSave'; saveId: string }
+  | { type: 'clearNotices' }
+  | { type: 'batch'; actions: CombatAction[] }                         // several changes saved together
   | { type: 'nextTurn' }
   | { type: 'previousTurn' }
   | { type: 'endCombat' }
@@ -56,10 +62,57 @@ function damage(state: CombatState, id: string, amount: number): CombatState {
   const next = updateOne(state, id, (c) => applyDamage(c, amount))
   const concentrating = target?.conditions.find((name) => name.startsWith(CONCENTRATING))
   if (!target || !concentrating || amount <= 0) return next
+  // A Con save waits in the tracker (roll it for a monster, ask the player for a PC).
+  const dc = concentrationDc(amount)
+  const withSave: CombatState = {
+    ...next,
+    pendingSaves: [...(next.pendingSaves ?? []), { id: crypto.randomUUID(), combatantId: id, ability: 'Con', dc, condition: concentrating, reason: 'concentration' }],
+  }
+  return addLog(withSave, {
+    id: crypto.randomUUID(),
+    text: `${target.name} took ${amount} damage while concentrating on ${concentrating.split(': ')[1] ?? 'a spell'}: Con save DC ${dc} to keep it`,
+  })
+}
+
+// A waiting save has been made or failed: end the condition (or concentration) if that's the result.
+function resolveSave(state: CombatState, saveId: string, passed: boolean, detail?: string): CombatState {
+  const save = state.pendingSaves?.find((s) => s.id === saveId)
+  const target = save && state.combatants.find((c) => c.id === save.combatantId)
+  if (!save || !target) return dismissSave(state, saveId)
+  const ends = save.reason === 'ends' ? passed : !passed
+  let next = dismissSave(state, saveId)
+  if (ends) next = removeCondition(next, target.id, save.condition)
+  const outcome = save.reason === 'ends'
+    ? (passed ? `no longer ${save.condition}` : `still ${save.condition}`)
+    : (passed ? 'keeps concentrating' : `loses concentration on ${save.condition.split(': ')[1] ?? 'the spell'}`)
   return addLog(next, {
     id: crypto.randomUUID(),
-    text: `${target.name} took ${amount} damage while concentrating on ${concentrating.split(': ')[1] ?? 'a spell'}: Con save DC ${concentrationDc(amount)} to keep it`,
+    text: `${target.name} ${passed ? 'makes' : 'fails'} the ${save.ability} save (DC ${save.dc}${detail ? `, rolled ${detail}` : ''}): ${outcome}`,
   })
+}
+
+const dismissSave = (state: CombatState, saveId: string): CombatState =>
+  ({ ...state, pendingSaves: (state.pendingSaves ?? []).filter((s) => s.id !== saveId) })
+
+// Moving to the next turn: the outgoing creature's turn ends, then the next one's starts.
+// Conditions that run out are removed, and listed for the GM (and in the roll history).
+function changeTurn(state: CombatState): CombatState {
+  const outgoing = state.round > 0 ? state.activeId : null
+  let next = nextTurn(state)
+  if (next === state) return state
+  const notices: string[] = []
+  if (outgoing && state.combatants.some((c) => c.id === outgoing)) {
+    const ended = endOfTurn(next, outgoing)
+    next = ended.state
+    notices.push(...ended.notices)
+  }
+  if (next.activeId) {
+    const started = startOfTurn(next, next.activeId)
+    next = started.state
+    notices.push(...started.notices)
+  }
+  for (const text of notices) next = addLog(next, { id: crypto.randomUUID(), text })
+  return { ...startTurn(next), notices }
 }
 
 // Sets one entry in a combatant's "uses" record; 0 removes it.
@@ -114,7 +167,7 @@ function removeWhere(state: CombatState, shouldRemove: (c: Combatant) => boolean
     activeId = rest.find((c) => !shouldRemove(c))?.id ?? null
   }
   const combatants = state.combatants.filter((c) => !shouldRemove(c))
-  return combatants.length === 0 ? emptyCombat : { ...state, combatants, activeId }
+  return combatants.length === 0 ? emptyCombat : forgetRemoved({ ...state, combatants, activeId })
 }
 
 export function combatReducer(state: CombatState, action: CombatAction): CombatState {
@@ -131,25 +184,34 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
       return updateOne(state, action.id, (c) => ({ ...c, tempHp: Math.max(0, action.amount) }))
     case 'setInitiative':
       return updateOne(state, action.id, (c) => ({ ...c, initiative: action.initiative }))
-    case 'toggleCondition':
-      return updateOne(state, action.id, (c) => ({
-        ...c,
-        conditions: c.conditions.includes(action.condition)
-          ? c.conditions.filter((name) => name !== action.condition)
-          : [...c.conditions, action.condition],
-      }))
+    case 'toggleCondition': {
+      const has = state.combatants.find((c) => c.id === action.id)?.conditions.includes(action.condition)
+      return has ? removeCondition(state, action.id, action.condition) : addCondition(state, action.id, action.condition)
+    }
+    case 'addCondition':
+      return addCondition(state, action.id, action.condition, action.timer)
+    case 'resolveSave':
+      return resolveSave(state, action.saveId, action.passed, action.detail)
+    case 'dismissSave':
+      return dismissSave(state, action.saveId)
+    case 'clearNotices':
+      return { ...state, notices: [] }
+    case 'batch':
+      return action.actions.reduce(combatReducer, state)
     case 'nextTurn':
-      return startTurn(nextTurn(state))
+      return changeTurn(state)
     case 'previousTurn':
       return previousTurn(state)
     case 'endCombat':
-      // Keep everyone, but reset the round counter, conditions, legendary actions and roll history.
-      // Daily uses and spell slots are kept: they only come back after a rest.
+      // Keep everyone, but reset the round counter, conditions, legendary actions, waiting saves and
+      // roll history. Daily uses and spell slots are kept: they only come back after a rest.
       return {
-        combatants: state.combatants.map((c) => ({ ...setUse(c, LEGENDARY_KEY, 0), conditions: [] })),
+        combatants: state.combatants.map((c) => ({ ...setUse(c, LEGENDARY_KEY, 0), conditions: [], timers: {} })),
         round: 0,
         activeId: null,
         log: [],
+        pendingSaves: [],
+        notices: [],
       }
     case 'clearMonsters':
       return removeWhere(state, (c) => !c.isPlayer)
@@ -159,12 +221,12 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
       return updateOne(state, action.id, (c) => setUse(c, action.key, action.used))
     case 'setLegendaryMax':
       return updateOne(state, action.id, (c) => ({ ...c, legendaryMax: Math.max(0, action.max) }))
-    case 'concentrate':
+    case 'concentrate': {
       // Only one concentration spell at a time: replace any earlier one.
-      return updateOne(state, action.id, (c) => ({
-        ...c,
-        conditions: [...c.conditions.filter((name) => !name.startsWith(CONCENTRATING)), `${CONCENTRATING}: ${action.spell}`],
-      }))
+      const earlier = state.combatants.find((c) => c.id === action.id)?.conditions.filter((name) => name.startsWith(CONCENTRATING)) ?? []
+      const cleared = earlier.reduce((s, name) => removeCondition(s, action.id, name), state)
+      return addCondition(cleared, action.id, `${CONCENTRATING}: ${action.spell}`)
+    }
     case 'log':
       return addLog(state, action.entry)
   }

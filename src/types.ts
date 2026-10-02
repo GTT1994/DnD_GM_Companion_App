@@ -15,6 +15,7 @@ export type Combatant = {
   initiative: number    // initiative roll, decides turn order
   isPlayer: boolean     // true = player character, false = monster
   conditions: string[]  // names of active conditions, e.g. "Prone"
+  timers?: Record<string, ConditionTimer>  // durations for some of those conditions, by condition name
   monster?: { edition: Edition; index: string }  // the SRD monster it came from, if any
   pcId?: string         // the party member it represents, if any (their HP is kept in sync)
   uses?: Record<string, number>  // limited-use abilities spent this fight, e.g. { "slot:3": 2, "feature:Fire Breath": 1 }
@@ -28,11 +29,36 @@ export type LogEntry = {
 }
 
 // Everything the combat tracker saves between page loads.
+// How long a condition lasts. Conditions without a timer last until removed.
+export type ConditionTimer =
+  // A number of rounds, counted down at the end of the affected creature's turns.
+  | { kind: 'rounds'; rounds: number; skip?: boolean }
+  // Until the start or end of someone's next turn (e.g. the caster's, not always the target's).
+  | { kind: 'turn'; when: 'start' | 'end'; ownerId: string; skip?: boolean }
+  // A saving throw at the end of each of the affected creature's turns; a success ends it.
+  | { kind: 'save'; ability: Ability; dc: number }
+// skip: set when the timer starts during the turn it counts, so that turn ending doesn't count
+// (e.g. "until the end of its next turn" given on its own turn means the following turn).
+
+export type Ability = 'Str' | 'Dex' | 'Con' | 'Int' | 'Wis' | 'Cha'
+
+// A saving throw waiting for the GM: to end a condition ("save ends"), or to keep concentrating.
+export type PendingSave = {
+  id: string
+  combatantId: string
+  ability: Ability
+  dc: number
+  condition: string                     // the condition the save is about
+  reason: 'ends' | 'concentration'      // a success ends the condition / a failure ends concentration
+}
+
 export type CombatState = {
   combatants: Combatant[]
   round: number            // 0 = combat not started yet
   activeId: string | null  // whose turn it is
   log?: LogEntry[]         // recent rolls, newest first
+  pendingSaves?: PendingSave[]  // saves to roll or ask the player for
+  notices?: string[]       // what changed at the last turn change, e.g. "Goblin is no longer Restrained"
 }
 
 // The kinds of SRD entry that Quick Lookup can show.

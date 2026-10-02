@@ -7,6 +7,7 @@ import type { DamagePart } from '../data/srd'
 import type { CombatAction } from '../lib/combat'
 import { rollToHit, type D20Mode } from '../lib/actions'
 import { rollDice, signed } from '../lib/dice'
+import type { GroupSavePreset } from '../lib/saves'
 
 // What every roll widget needs to know about the fight.
 export type RollContext = {
@@ -15,6 +16,7 @@ export type RollContext = {
   mode: D20Mode                      // advantage / disadvantage for to-hit rolls
   dispatch: Dispatch<CombatAction>
   log: (text: string) => void        // adds a line to the roll history
+  openGroupSave: (preset: GroupSavePreset) => void  // opens the group save form, filled in
 }
 
 type ToHitProps = {

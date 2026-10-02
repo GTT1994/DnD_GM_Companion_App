@@ -7,6 +7,9 @@ import { useSrd } from '../data/srd'
 import { AddCombatantForm } from './AddCombatantForm'
 import { CombatantRow } from './CombatantRow'
 import { MonsterPanel } from './MonsterPanel'
+import { GroupSave } from './GroupSave'
+import { TurnAlerts } from './TurnAlerts'
+import type { GroupSavePreset } from '../lib/saves'
 
 // Not an official condition, but GMs track it like one.
 const EXTRA_CONDITIONS = ['Concentrating']
@@ -36,6 +39,9 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
   const selectedId = pick.atTurn === combat.activeId ? pick.id : (activeMonsterId ?? pick.id)
   const select = (id: string | null) => setPick({ id, atTurn: combat.activeId })
   const selected = order.find((c) => c.id === selectedId)
+  // The group save form, when open (from the toolbar, or pre-filled from a monster's action or spell).
+  const [groupSave, setGroupSave] = useState<{ key: string; preset: GroupSavePreset } | null>(null)
+  const openGroupSave = (preset: GroupSavePreset) => setGroupSave({ key: crypto.randomUUID(), preset })
 
   return (
     <section className={`page combat-layout ${selected ? 'with-panel' : ''}`}>
@@ -50,6 +56,7 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
             <button type="button" className="primary" onClick={() => dispatch({ type: 'nextTurn' })} disabled={order.length === 0}>
               {combat.round === 0 ? 'Start combat' : 'Next turn ▶'}
             </button>
+            <button type="button" onClick={() => openGroupSave({})} disabled={order.length === 0} title="Several creatures make the same saving throw">Group save</button>
             <button type="button" onClick={() => dispatch({ type: 'endCombat' })} disabled={combat.round === 0} title="Reset the round counter and clear conditions">End combat</button>
             <button type="button" onClick={() => dispatch({ type: 'clearMonsters' })} disabled={!hasMonsters} title="Remove everyone except players">Clear NPCs</button>
             <button
@@ -69,6 +76,18 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
           // Number duplicate names, e.g. a second "Bandit" becomes "Bandit 2".
           onAdd={(c) => dispatch({ type: 'add', combatants: [{ ...c, name: uniqueName(c.name, combat.combatants) }] })}
         />
+
+        <TurnAlerts combat={combat} dispatch={dispatch} />
+        {groupSave && (
+          <GroupSave
+            key={groupSave.key}  // a new preset starts a fresh form
+            preset={groupSave.preset}
+            combat={combat}
+            conditionNames={conditionNames}
+            dispatch={dispatch}
+            onClose={() => setGroupSave(null)}
+          />
+        )}
 
         {order.length === 0 ? (
           <p className="empty">
@@ -96,6 +115,8 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
                   isActive={c.id === combat.activeId}
                   conditionNames={conditionNames}
                   conditionHelp={conditionHelp}
+                  combatants={order}
+                  activeId={combat.activeId}
                   dispatch={dispatch}
                   isSelected={c.id === selectedId}
                   onSelect={() => select(c.id === selectedId ? null : c.id)}
@@ -113,6 +134,7 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
           combat={combat}
           dispatch={dispatch}
           onClose={() => select(null)}
+          onGroupSave={openGroupSave}
           onOpenStatBlock={() => selected.monster && onOpenMonster(selected.monster.edition, selected.monster.index)}
         />
       )}
