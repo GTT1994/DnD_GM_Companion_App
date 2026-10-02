@@ -29,7 +29,7 @@ A DnD 5e companion app for Game Masters, for personal use on a laptop. See [READ
 - `src/lib/conditions.ts`: condition timers (run by `combatReducer` on each turn change) and the duration form; `saves.ts` for save bonuses, rolls and damage after a save
 - `src/lib/encounters.ts`: encounter difficulty (2014 thresholds/multipliers, 2024 budgets) and loading encounters into combat
 - `src/lib/homebrew.ts`: homebrew conversions (base + per-level dice → SRD-style tables), SRD copies, checks before saving
-- `scripts/build-srd.mjs`: downloads the SRD data from 5e-bits/5e-database and trims it to what the app uses
+- `scripts/build-srd.mjs`: downloads the SRD data from 5e-bits/5e-database and trims it to what the app uses. 2024 magic items that mention a table get Open5e's SRD 5.2 text (tables intact) or a hand fix from `scripts/fixes/2024-magic-items.json`; it warns about any it can't fix. `src/data/srd.test.ts` checks the result
 
 ## Working with the developer
 The developer's strong skill is SQL; their C# and Python knowledge is minimal.

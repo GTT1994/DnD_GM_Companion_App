@@ -123,7 +123,7 @@ Condition durations, saves waiting above the tracker (save ends and concentratio
 | Storage | IndexedDB (the browser's built-in database) via [Dexie](https://dexie.org/); small preferences in localStorage |
 | Page addresses | React Router |
 | Formatted notes | [TipTap](https://tiptap.dev/) editor |
-| Rules data | SRD content bundled as JSON, built from [5e-database](https://github.com/5e-bits/5e-database) |
+| Rules data | SRD content bundled as JSON, built from [5e-database](https://github.com/5e-bits/5e-database) (plus [Open5e](https://open5e.com) for 2024 magic item tables) |
 | Tests | Vitest (unit), playwright-core with Chrome (browser flows) |
 
 ## Getting Started
@@ -165,4 +165,4 @@ npm run srd    # re-download the SRD data into src/data/srd/
 
 ## Legal
 
-D&D rules content comes from the Systems Reference Document ([SRD 5.1 and SRD 5.2](https://www.dndbeyond.com/srd)) by Wizards of the Coast LLC, licensed under Creative Commons Attribution 4.0. The data files are built from the MIT-licensed [5e-database](https://github.com/5e-bits/5e-database) project. This project is not affiliated with or endorsed by Wizards of the Coast.
+D&D rules content comes from the Systems Reference Document ([SRD 5.1 and SRD 5.2](https://www.dndbeyond.com/srd)) by Wizards of the Coast LLC, licensed under Creative Commons Attribution 4.0. The data files are built from the MIT-licensed [5e-database](https://github.com/5e-bits/5e-database) project; 2024 magic item tables come from [Open5e](https://open5e.com)'s copy of SRD 5.2 (CC-BY-4.0), because the 5e-database copies lost their layout. This project is not affiliated with or endorsed by Wizards of the Coast.

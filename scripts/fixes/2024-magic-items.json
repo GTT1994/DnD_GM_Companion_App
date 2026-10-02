@@ -1,0 +1,10 @@
+{
+  "_about": "Hand-written Markdown tables for 2024 magic items whose tables are broken in 5e-database and missing from Open5e. Each replaces the text from the first line that mentions the table onwards (see build-srd.mjs). Values from SRD 5.2 (CC-BY-4.0).",
+  "potions-of-healing": "Potion\n\nYou regain Hit Points when you drink this potion. The number of Hit Points depends on the potion's rarity, as shown in the table below.\n\n| Potion | HP Regained | Rarity |\n|---|---|---|\n| Potion of Healing | 2d4 + 2 | Common |\n| Potion of Healing (greater) | 4d4 + 4 | Uncommon |\n| Potion of Healing (superior) | 8d4 + 8 | Rare |\n| Potion of Healing (supreme) | 10d4 + 20 | Very Rare |\n\nWhatever its potency, the potion's red liquid glimmers when agitated.",
+  "potion-of-giant-strength": "Potion\n\nWhen you drink this potion, your Strength score changes for 1 hour. The type of giant determines the score (see the table below). The potion has no effect on you if your Strength is equal to or greater than that score.\n\n| Potion | Str. | Rarity |\n|---|---|---|\n| Potion of Giant Strength (hill) | 21 | Uncommon |\n| Potion of Giant Strength (frost or stone) | 23 | Rare |\n| Potion of Giant Strength (fire) | 25 | Rare |\n| Potion of Giant Strength (cloud) | 27 | Very Rare |\n| Potion of Giant Strength (storm) | 29 | Legendary |\n\nThis potion's transparent liquid has floating in it a sliver of light resembling a giant's fingernail.",
+  "spell-scroll": {
+    "after": "as shown in the following table.",
+    "table": "| Spell Level | Rarity | Save DC | Attack Bonus |\n|---|---|---|---|\n| Cantrip | Common | 13 | +5 |\n| 1 | Common | 13 | +5 |\n| 2 | Uncommon | 13 | +5 |\n| 3 | Uncommon | 15 | +7 |\n| 4 | Rare | 15 | +7 |\n| 5 | Rare | 17 | +9 |\n| 6 | Very Rare | 17 | +9 |\n| 7 | Very Rare | 18 | +10 |\n| 8 | Very Rare | 18 | +10 |\n| 9 | Legendary | 19 | +11 |",
+    "resume": "Copying a Scroll into a Spellbook."
+  }
+}

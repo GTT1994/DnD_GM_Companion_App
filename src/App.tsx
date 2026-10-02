@@ -143,7 +143,7 @@ function Layout() {
 
       <footer className="app-footer">
         Rules content from the System Reference Document 5.1 and 5.2 by Wizards of the Coast LLC, licensed under CC-BY-4.0.
-        Data via <a href="https://github.com/5e-bits/5e-database" target="_blank" rel="noreferrer">5e-database</a>.
+        Data via <a href="https://github.com/5e-bits/5e-database" target="_blank" rel="noreferrer">5e-database</a> and <a href="https://open5e.com" target="_blank" rel="noreferrer">Open5e</a>.
       </footer>
     </div>
   )

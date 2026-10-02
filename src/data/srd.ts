@@ -101,7 +101,8 @@ export type Spell = {
 export type MagicItem = {
   index: string
   name: string
-  rarity: string
+  rarity: string         // plain rarity, e.g. "Uncommon" (what loot and shops match on)
+  rarityNote?: string    // the rest of the data's rarity, e.g. "+1" from "Uncommon (+1)"
   category: string
   attunement: boolean
   desc: string

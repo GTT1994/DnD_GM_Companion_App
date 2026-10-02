@@ -1,9 +1,9 @@
 // Downloads the SRD rules data (2014 and 2024 editions: monsters, spells, conditions, magic items,
 // equipment and, for 2014, rules sections) from the 5e-bits/5e-database
-// project and trims it down to the fields the app uses, writing one JSON file per
+// project (plus Open5e's SRD 5.2 text for 2024 magic item tables) and trims it down to the fields the app uses, writing one JSON file per
 // category to src/data/srd/<edition>/. Run with: npm run srd
 
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 
 const SOURCE = 'https://raw.githubusercontent.com/5e-bits/5e-database/main/src'
 const OUT_DIR = new URL('../src/data/srd/', import.meta.url)
@@ -247,16 +247,79 @@ function condition(c) {
   return { index: c.index, name: c.name, desc }
 }
 
+// "Uncommon (+1)" → { rarity: 'Uncommon', rarityNote: '+1' }; "Rare (Brass)" → Rare, Brass.
+// The loot and shop generators match on the plain rarity.
+function splitRarity(name) {
+  const match = name.match(/^(Common|Uncommon|Rare|Very Rare|Legendary|Artifact)\s*\((.+)\)$/i)
+  if (match) return { rarity: match[1], rarityNote: match[2] }
+  return { rarity: name === 'Rarity Varies' ? 'Varies' : name }
+}
+
 function magicItem(item) {
   const desc = toText(item.desc)
   return {
     index: item.index,
     name: item.name,
-    rarity: item.rarity.name,
+    ...splitRarity(item.rarity.name),
     category: item.equipment_category.name,
     attunement: item.attunement ?? /requires attunement/i.test(desc),
     desc,
   }
+}
+
+// --- 2024 magic item tables ---------------------------------------------------------------
+// In the 2024 data, magic item tables lost their layout (cells run together, rows missing). Open5e
+// publishes the same SRD 5.2 text (also CC-BY-4.0) with the tables intact, so for any 2024 item that
+// mentions a table, its description is taken from Open5e instead. A few items Open5e doesn't have
+// are corrected by hand in scripts/fixes/2024-magic-items.json.
+
+const OPEN5E = 'https://api.open5e.com/v2/magicitems/?format=json&document=srd-2024&limit=1000'
+const HAND_FIXES = JSON.parse(await readFile(new URL('./fixes/2024-magic-items.json', import.meta.url), 'utf8'))
+
+// Does this description refer to a table (which will have been broken)?
+const mentionsTable = (desc) => /\btable\b/i.test(desc) || /\d{2}[-–]\d{2}\s/.test(desc)
+const hasMarkdownTable = (desc) => /\n\|.*\|/.test(desc)
+
+// Open5e sometimes splits an item into versions (e.g. one entry per armour type); any version has the table.
+function findOpen5e(open5e, item) {
+  const key = (k) => k.replace('srd-2024_', '')
+  const candidates = [
+    ...open5e.filter((r) => r.name.toLowerCase() === item.name.toLowerCase() || key(r.key) === item.index),
+    ...open5e.filter((r) => key(r.key) === item.index.replace(/-\d+$/, '')),          // horn-of-valhalla-2 → horn-of-valhalla
+    ...open5e.filter((r) => key(r.key).startsWith(`${item.index}-`)),                // armor-of-resistance-breastplate
+    ...open5e.filter((r) => item.index === 'ammunition-of-slaying' && /^ammunition-of-.+-slaying$/.test(key(r.key))),
+  ]
+  return candidates.find((r) => hasMarkdownTable(r.desc))
+}
+
+async function fixTables2024(items) {
+  const res = await fetch(OPEN5E)
+  if (!res.ok) throw new Error(`Failed to download Open5e magic items: ${res.status}`)
+  const open5e = (await res.json()).results
+  const unfixed = []
+  for (const item of items) {
+    if (!mentionsTable(item.desc)) continue
+    const hand = HAND_FIXES[item.index]
+    if (typeof hand === 'string') {
+      item.desc = hand
+    } else if (hand) {
+      // Keep the text around the table, swapping in the table itself.
+      const before = item.desc.slice(0, item.desc.indexOf(hand.after) + hand.after.length)
+      item.desc = `${before}\n\n${hand.table}\n\n${item.desc.slice(item.desc.indexOf(hand.resume))}`
+    } else {
+      const match = findOpen5e(open5e, item)
+      if (!match) {
+        unfixed.push(item.name)
+        continue
+      }
+      // Keep the 2024 data's first line (e.g. "Armor (Any Medium or Heavy)"), then Open5e's text.
+      const firstLine = item.desc.split('\n')[0].trim()
+      item.desc = firstLine.length < 80 && !match.desc.startsWith(firstLine) ? `${firstLine}\n\n${match.desc}` : match.desc
+    }
+  }
+  // Tells you when a data update brings a new broken table that needs a fix.
+  if (unfixed.length) console.warn(`⚠ 2024 magic items mentioning a table with no fix: ${unfixed.join(', ')}`)
+  return items
 }
 
 // --- Equipment (for Quick Lookup and the shop generator) ----------------------
@@ -332,8 +395,13 @@ async function build(edition) {
     monsters: (await load(edition, 'Monsters')).map(monster),
     spells: (await load(edition, 'Spells')).map(spell),
     conditions: (await load(edition, 'Conditions')).map(condition),
-    // Skip "parent" items whose rarity depends on the variant (e.g. "Armor, +1, +2, or +3").
-    'magic-items': (await load(edition, 'Magic-Items')).map(magicItem).filter((i) => i.rarity !== 'Varies'),
+    // Skip "parent" items that just combine their versions (e.g. "Armor, +1, +2, or +3"): 2014 marks
+    // them "Varies"; in 2024 they're the ones listing variants (each version has its own entry).
+    'magic-items': await (async () => {
+      const raw = (await load(edition, 'Magic-Items')).filter((i) => i.rarity.name !== 'Varies' && !(edition === '2024' && i.variants?.length))
+      const items = raw.map(magicItem)
+      return edition === '2024' ? fixTables2024(items) : items
+    })(),
     equipment: (await load(edition, 'Equipment')).map(equipment),
   }
   // The 2024 data has no rule sections yet; the app falls back to its own quick rules.

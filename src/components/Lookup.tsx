@@ -58,7 +58,7 @@ export function Lookup({ edition, state, setState, searchRef, onAddMonster, onHo
     ...(conditions ?? []).map((c) => ({ category: 'conditions' as const, index: c.index, name: c.name, subtitle: 'Condition' })),
     ...(monsters ?? []).map((m) => ({ category: 'monsters' as const, index: m.index, name: m.name, subtitle: `${m.homebrew ? 'Homebrew · ' : ''}CR ${formatCr(m.cr)} · ${m.meta.split(', ')[1]}` })),
     ...(spells ?? []).map((s) => ({ category: 'spells' as const, index: s.index, name: s.name, subtitle: `${s.homebrew ? 'Homebrew · ' : ''}${s.level === 0 ? 'Cantrip' : `Level ${s.level}`} · ${s.school}` })),
-    ...(items ?? []).map((i) => ({ category: 'magic-items' as const, index: i.index, name: i.name, subtitle: `${i.rarity} · ${i.category}` })),
+    ...(items ?? []).map((i) => ({ category: 'magic-items' as const, index: i.index, name: i.name, subtitle: `${i.rarity}${i.rarityNote ? ` (${i.rarityNote})` : ''} · ${i.category}` })),
     ...(equipment ?? []).map((e) => ({ category: 'equipment' as const, index: e.index, name: e.name, subtitle: [e.detail ?? e.category, e.cost].filter(Boolean).join(' · ') })),
     ...rules.map((r) => ({ category: 'rules' as const, index: r.index, name: r.name, subtitle: r.index.startsWith('quick-') ? 'Quick rule' : 'Rules section' })),
   ]
@@ -172,7 +172,7 @@ function Detail({ selected, data, onAddMonster, onHomebrew }: DetailProps) {
       return (
         <article>
           <h2>{item.name}</h2>
-          <p className="meta">{item.category}, {item.rarity}{item.attunement ? ' (requires attunement)' : ''}</p>
+          <p className="meta">{item.category}, {item.rarity}{item.rarityNote ? ` (${item.rarityNote})` : ''}{item.attunement ? ' (requires attunement)' : ''}</p>
           <Markdown text={item.desc} />
         </article>
       )

@@ -111,4 +111,11 @@ export default async function ({ page, base, shot }) {
   await page.locator('.search').fill('longsword')
   await page.locator('.results button').first().click()
   assert.match(await page.locator('.equipment-stats').innerText(), /Damage\s+1d8 Slashing/)
+
+  // A 2024 magic item table that used to be scrambled shows as a full table.
+  await page.getByRole('button', { name: 'Magic Items', exact: true }).click()
+  await page.locator('.search').fill('bag of beans')
+  await page.locator('.results button').first().click()
+  assert.equal(await page.locator('.markdown table tbody tr').count(), 12)
+  await shot('magic-item-table')
 }
