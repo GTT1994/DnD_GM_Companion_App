@@ -311,16 +311,18 @@ main {
   gap: 0.4rem;
 }
 
+.toolbar-buttons button.selected { border-color: var(--gold); color: var(--gold-bright); }
+
+.add-combatant { border-color: var(--gold); }
+.add-combatant h3 { margin: 0; }
+.add-combatant h3 .meta { font-family: var(--sans); font-size: 0.85rem; font-weight: normal; text-transform: none; letter-spacing: 0; }
+
 .add-form {
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  margin-top: 0.6rem;
 }
 
 .add-form label {

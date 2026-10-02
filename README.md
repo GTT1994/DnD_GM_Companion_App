@@ -26,7 +26,7 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - **Load into combat**: replace or add to monsters already in the fight, one initiative roll per group, average or rolled HP, and optionally add the party
 
 **Combat tracker**
-- Add players and custom monsters (leave Initiative blank to roll a d20). Press Enter to add.
+- **+ Add combatant** opens a form for players and custom monsters (leave Initiative blank to roll a d20; press Enter to add). It stays open for the next one until you close it with ✕, so the tracker shows just the fight
 - Turn order sorted by initiative, with a round counter and Previous / Next turn
 - Damage, healing and temporary HP (damage uses up temp HP first; HP stays between 0 and max)
 - Conditions from the SRD, plus Concentrating; hover a condition to read it, click it to remove it

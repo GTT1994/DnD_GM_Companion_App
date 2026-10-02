@@ -4,6 +4,7 @@ import { useState, type Dispatch } from 'react'
 import type { CombatState, Edition } from '../types'
 import { sortByInitiative, uniqueName, type CombatAction } from '../lib/combat'
 import { useSrd } from '../data/srd'
+import { useCampaignRoute } from '../lib/appContext'
 import { AddCombatantForm } from './AddCombatantForm'
 import { CombatantRow } from './CombatantRow'
 import { MonsterPanel } from './MonsterPanel'
@@ -42,6 +43,10 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
   // The group save form, when open (from the toolbar, or pre-filled from a monster's action or spell).
   const [groupSave, setGroupSave] = useState<{ key: string; preset: GroupSavePreset } | null>(null)
   const openGroupSave = (preset: GroupSavePreset) => setGroupSave({ key: crypto.randomUUID(), preset })
+  // The add form: open or closed by the GM; until they choose, it's open only while the fight is empty.
+  const [addChoice, setAddChoice] = useState<boolean | null>(null)
+  const adding = addChoice ?? order.length === 0
+  const { base } = useCampaignRoute()
 
   return (
     <section className={`page combat-layout ${selected ? 'with-panel' : ''}`}>
@@ -51,6 +56,7 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
             {combat.round === 0 ? 'Not started' : <>Round <strong>{combat.round}</strong>{active && <> · {active.name}'s turn</>}</>}
           </div>
           <div className="toolbar-buttons">
+            <button type="button" className={adding ? 'selected' : ''} onClick={() => setAddChoice(!adding)} aria-expanded={adding}>+ Add combatant</button>
             {onAddParty && <button type="button" onClick={onAddParty} title="Add every party member not already in the fight">Add party</button>}
             <button type="button" onClick={() => dispatch({ type: 'previousTurn' })} disabled={combat.round === 0}>◀ Previous</button>
             <button type="button" className="primary" onClick={() => dispatch({ type: 'nextTurn' })} disabled={order.length === 0}>
@@ -70,12 +76,16 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
           </div>
         </div>
 
-        <AddCombatantForm
-          // In a campaign the party is added with "Add party", so the form is mostly for monsters.
-          defaultIsPlayer={!onAddParty}
-          // Number duplicate names, e.g. a second "Bandit" becomes "Bandit 2".
-          onAdd={(c) => dispatch({ type: 'add', combatants: [{ ...c, name: uniqueName(c.name, combat.combatants) }] })}
-        />
+        {adding && (
+          <AddCombatantForm
+            // In a campaign the party is added with "Add party", so the form is mostly for monsters.
+            defaultIsPlayer={!onAddParty}
+            lookupHref={`${base}/lookup`}
+            onClose={() => setAddChoice(false)}
+            // Number duplicate names, e.g. a second "Bandit" becomes "Bandit 2".
+            onAdd={(c) => dispatch({ type: 'add', combatants: [{ ...c, name: uniqueName(c.name, combat.combatants) }] })}
+          />
+        )}
 
         <TurnAlerts combat={combat} dispatch={dispatch} />
         {groupSave && (
@@ -91,7 +101,7 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
 
         {order.length === 0 ? (
           <p className="empty">
-            No one in the fight yet. {onAddParty ? <>Use <strong>Add party</strong>, add</> : 'Add'} combatants above, or add monsters from their stat block in <strong>Quick Lookup</strong> (⌘K).
+            No one in the fight yet. {onAddParty ? <>Use <strong>Add party</strong>, <strong>+ Add combatant</strong></> : <>Use <strong>+ Add combatant</strong></>}, or add monsters from their stat block in <strong>Quick Lookup</strong> (⌘K).
           </p>
         ) : (
           <table className="tracker">

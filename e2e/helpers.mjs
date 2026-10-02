@@ -23,8 +23,10 @@ export async function addMonster(page, base, edition, search, count = 1) {
   await page.getByText(/^Added \d/).waitFor()
 }
 
-// Adds a combatant with the tracker's form.
+// Adds a combatant with the tracker's form, opening it first if it's closed.
 export async function addCombatant(page, { name, initiative = '', hp, ac, player = true }) {
+  await page.locator('.toolbar').waitFor()
+  if (!(await page.locator('.add-form').isVisible())) await page.getByRole('button', { name: '+ Add combatant' }).click()
   const form = page.locator('.add-form')
   await form.getByLabel('Name').fill(name)
   await form.getByLabel('Initiative').fill(String(initiative))

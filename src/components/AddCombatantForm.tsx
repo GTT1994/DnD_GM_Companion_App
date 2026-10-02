@@ -1,7 +1,8 @@
-// A form for adding a player or a custom monster to the combat tracker.
-// (SRD monsters are added from their stat block in Quick Lookup.)
+// A form for adding a player or a custom monster to the combat tracker, opened with
+// "+ Add combatant" and closed with ✕. (SRD monsters are added from their stat block in Quick Lookup.)
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { Link } from 'react-router'
 import type { Combatant } from '../types'
 import { rollDie } from '../lib/dice'
 
@@ -9,9 +10,12 @@ type AddCombatantFormProps = {
   // Function from the tracker to call with the new combatant when the form is submitted.
   onAdd: (newCombatant: Combatant) => void
   defaultIsPlayer: boolean  // whether the Player box starts ticked
+  lookupHref: string        // Quick Lookup, for finding a monster's stat block
+  onClose: () => void
 }
 
-export function AddCombatantForm({ onAdd, defaultIsPlayer }: AddCombatantFormProps) {
+export function AddCombatantForm({ onAdd, defaultIsPlayer, lookupHref, onClose }: AddCombatantFormProps) {
+  const nameRef = useRef<HTMLInputElement>(null)
   // The box values are kept as text (boxes always give text) and converted when added.
   const [name, setName] = useState('')
   const [initiative, setInitiative] = useState('')
@@ -39,9 +43,15 @@ export function AddCombatantForm({ onAdd, defaultIsPlayer }: AddCombatantFormPro
     setInitiative('')
     setMaxHp('')
     setAc('')
+    nameRef.current?.focus()  // the form stays open, ready for the next one
   }
 
   return (
+    <section className="add-combatant card" aria-label="Add combatant">
+      <div className="group-save-header">
+        <h3>Add combatant <span className="meta">· or find a monster in <Link to={lookupHref}>Quick Lookup</Link> (⌘K)</span></h3>
+        <button type="button" className="remove" onClick={onClose} aria-label="Close add combatant">✕</button>
+      </div>
     <form
       className="add-form"
       onSubmit={(e) => {
@@ -52,7 +62,7 @@ export function AddCombatantForm({ onAdd, defaultIsPlayer }: AddCombatantFormPro
       {/* "required" and "min" make the browser refuse to submit missing or invalid values */}
       <label>
         Name
-        <input required value={name} onChange={(e) => setName(e.target.value)} />
+        <input ref={nameRef} required autoFocus value={name} onChange={(e) => setName(e.target.value)} />
       </label>
       <label>
         Initiative
@@ -73,5 +83,6 @@ export function AddCombatantForm({ onAdd, defaultIsPlayer }: AddCombatantFormPro
       {/* type="submit" means pressing Enter in any box adds the combatant */}
       <button type="submit" className="primary">Add</button>
     </form>
+    </section>
   )
 }

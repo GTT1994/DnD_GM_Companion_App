@@ -5,8 +5,10 @@ import { addCombatant, addMonster, assert, trackerRows } from '../helpers.mjs'
 
 export default async function ({ page, base, shot }) {
   await page.goto(`${base}/quick-combat`)
+  await page.locator('.add-form').waitFor()  // an empty fight starts with the form open
   await addCombatant(page, { name: 'Thorin', initiative: 15, hp: 34, ac: 18 })
   await addCombatant(page, { name: 'Jazz', initiative: 11, hp: 39, ac: 14 })
+  await shot('add-form-open')
 
   // The form refuses to add someone without HP.
   const form = page.locator('.add-form')
@@ -14,6 +16,14 @@ export default async function ({ page, base, shot }) {
   await form.getByRole('button', { name: 'Add' }).click()
   assert.equal(await page.locator('tr.combatant').count(), 2, 'invalid combatant should not be added')
   await form.getByLabel('Name').fill('')
+
+  // The form was open because the fight was empty; ✕ closes it, the toolbar button brings it back.
+  await page.getByRole('button', { name: 'Close add combatant' }).click()
+  await form.waitFor({ state: 'detached' })
+  await page.getByRole('button', { name: '+ Add combatant' }).click()
+  await form.getByLabel('Name').waitFor()
+  assert.equal(await page.evaluate(() => document.activeElement?.closest('.add-form') !== null), true, 'Name box should have the cursor')
+  await page.getByRole('button', { name: 'Close add combatant' }).click()
 
   // ⌘K opens Quick Lookup with the search box focused; exact name matches come first.
   await page.keyboard.press('Meta+k')
