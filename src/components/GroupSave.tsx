@@ -84,7 +84,7 @@ export function GroupSave({ preset, combat, conditionNames, dispatch, onClose }:
     // The roll history shows newest first, so the heading goes in last.
     const heading = `${preset.label ?? 'Group save'}: DC ${dcValue} ${ability} save${damageRoll ? `, ${damageRoll.total}${type} damage` : ''}`
     for (const text of [...lines.reverse(), heading]) actions.push({ type: 'log', entry: { id: crypto.randomUUID(), text } })
-    dispatch({ type: 'batch', actions })
+    dispatch({ type: 'batch', label: `group save${preset.label ? ` (${preset.label})` : ''}`, actions })
     onClose()
   }
 

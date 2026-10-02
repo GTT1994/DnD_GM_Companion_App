@@ -19,7 +19,9 @@ export type CombatAction =
   | { type: 'resolveSave'; saveId: string; passed: boolean; detail?: string }       // a waiting save was made or failed
   | { type: 'dismissSave'; saveId: string }
   | { type: 'clearNotices' }
-  | { type: 'batch'; actions: CombatAction[] }                         // several changes saved together
+  | { type: 'batch'; actions: CombatAction[]; label?: string }         // several changes saved together
+  | { type: 'resetCombat' }                                            // run the same fight again from the start
+  | { type: 'restore'; state: CombatState; note?: string }            // put back an earlier state (undo / redo)
   | { type: 'nextTurn' }
   | { type: 'previousTurn' }
   | { type: 'endCombat' }
@@ -213,6 +215,22 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
         pendingSaves: [],
         notices: [],
       }
+    case 'resetCombat':
+      // Everyone back to full HP with no conditions, and every limited use restored; same people,
+      // same initiative, round not started.
+      return {
+        combatants: state.combatants.map((c) => ({ ...c, hp: c.maxHp, tempHp: 0, conditions: [], timers: {}, uses: {} })),
+        round: 0,
+        activeId: null,
+        log: [],
+        pendingSaves: [],
+        notices: [],
+      }
+    case 'restore': {
+      // The roll history isn't undone (it's a record of what was rolled); a note says what was undone.
+      const restored = { ...action.state, log: state.log }
+      return action.note ? addLog(restored, { id: crypto.randomUUID(), text: action.note }) : restored
+    }
     case 'clearMonsters':
       return removeWhere(state, (c) => !c.isPlayer)
     case 'clearAll':

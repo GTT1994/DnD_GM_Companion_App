@@ -70,7 +70,8 @@ function App() {
 // The campaign's own fight; its combat id is the campaign id.
 function CampaignCombat() {
   const { campaignId } = useCampaignRoute()
-  return <CombatPage combatId={campaignId!} campaignId={campaignId} />
+  // key: a different campaign's fight starts with its own (empty) undo history.
+  return <CombatPage key={campaignId} combatId={campaignId!} campaignId={campaignId} />
 }
 
 // The header and footer around every page. The navigation changes inside a campaign.

@@ -1,7 +1,7 @@
 // Quick combat basics: adding combatants, turn order, damage/temp HP/healing, conditions,
 // saving across a refresh, Quick Lookup search and rules, and the generators.
 
-import { addCombatant, addMonster, assert, trackerRows } from '../helpers.mjs'
+import { addCombatant, addMonster, assert, startCombat, trackerRows } from '../helpers.mjs'
 
 export default async function ({ page, base, shot }) {
   await page.goto(`${base}/quick-combat`)
@@ -49,7 +49,7 @@ export default async function ({ page, base, shot }) {
   // Turn order and HP.
   await page.goto(`${base}/quick-combat`)
   await page.locator('tr.combatant').nth(3).waitFor()
-  await page.getByRole('button', { name: 'Start combat' }).click()
+  await startCombat(page)
   await page.locator('.round', { hasText: 'Round 1' }).waitFor()
 
   const thorin = page.locator('tr.combatant', { hasText: 'Thorin' })

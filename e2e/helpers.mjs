@@ -71,3 +71,18 @@ export function trackerRows(page) {
     hp: tr.querySelector('.hp-text')?.textContent?.trim(),
   })))
 }
+
+// Presses Start combat; when the initiative prompt opens (players in the fight), keeps their numbers.
+export async function startCombat(page) {
+  await page.getByRole('button', { name: 'Start combat' }).click()
+  const skip = page.locator('.initiative-prompt').getByRole('button', { name: 'Skip' })
+  await skip.or(page.locator('.round', { hasText: 'Round 1' })).first().waitFor()
+  if (await skip.isVisible()) await skip.click()
+  await page.locator('.round', { hasText: 'Round 1' }).waitFor()
+}
+
+// Picks an action from the combat toolbar's "More ▾" menu.
+export async function moreMenu(page, label) {
+  await page.getByRole('button', { name: 'More ▾' }).click()
+  await page.getByRole('menuitem', { name: label }).click()
+}

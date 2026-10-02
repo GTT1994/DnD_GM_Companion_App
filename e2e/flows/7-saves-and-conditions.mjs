@@ -1,7 +1,7 @@
 // Condition durations (rounds, start/end of someone's turn, save ends), the saves waiting above the
 // tracker (concentration too), monster save buttons, and group saves with damage and conditions.
 
-import { addCombatant, addMonster, assert, select } from '../helpers.mjs'
+import { addCombatant, addMonster, assert, moreMenu, select, startCombat } from '../helpers.mjs'
 
 export default async function ({ page, base, shot }) {
   await page.goto(base)
@@ -21,7 +21,7 @@ export default async function ({ page, base, shot }) {
   await row('Goblin Boss').locator('.init-input').press('Enter')
   await page.waitForFunction(() => [...document.querySelectorAll('tr.combatant .name-cell')].map((c) => c.textContent).join('|').match(/Thorin.*Jazz.*Goblin Boss.*Goblin Boss 2.*Adult Red Dragon/))
 
-  await page.getByRole('button', { name: 'Start combat' }).click()
+  await startCombat(page)
   await page.locator('tr.combatant.active', { hasText: 'Thorin' }).waitFor()
 
   // Adds a condition with a duration through the row's "+ Condition" form.
@@ -134,7 +134,7 @@ export default async function ({ page, base, shot }) {
   await panel.locator('.roll-log li', { hasText: /Goblin Boss (makes|fails) the Con save \(DC 10, rolled/ }).waitFor()
 
   // End combat clears conditions and waiting saves.
-  await page.getByRole('button', { name: 'End combat' }).click()
+  await moreMenu(page, 'End combat')
   await page.waitForFunction(() => document.querySelectorAll('.chip').length === 0)
   assert.equal(await alerts.count(), 0)
 }

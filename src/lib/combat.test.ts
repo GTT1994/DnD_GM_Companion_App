@@ -198,3 +198,27 @@ describe('condition durations', () => {
     expect(s.combatants.map((x) => x.hp)).toEqual([8, 10, 6])
   })
 })
+
+describe('reset and restore', () => {
+  it('reset combat: full HP, no conditions, uses back, round not started', () => {
+    let s = combatReducer(started, { type: 'damage', id: 'b', amount: 7 })
+    s = combatReducer(s, { type: 'setTempHp', id: 'a', amount: 5 })
+    s = combatReducer(s, { type: 'addCondition', id: 'c', condition: 'Prone', timer: { kind: 'rounds', rounds: 2 } })
+    s = combatReducer(s, { type: 'setUse', id: 'b', key: 'slot:3', used: 2 })
+    s = combatReducer(s, { type: 'setInitiative', id: 'c', initiative: 3 })
+    const reset = combatReducer(s, { type: 'resetCombat' })
+    expect(reset.round).toBe(0)
+    expect(reset.activeId).toBeNull()
+    expect(reset.combatants.map((x) => [x.id, x.hp, x.tempHp, x.conditions.length, Object.keys(x.uses ?? {}).length, x.initiative]))
+      .toEqual([['c', 10, 0, 0, 0, 3], ['a', 10, 0, 0, 0, 20], ['b', 10, 0, 0, 0, 15]])
+  })
+
+  it('restore puts back an earlier state but keeps the roll history, with a note', () => {
+    const before = started
+    let s = combatReducer(before, { type: 'log', entry: { id: 'r1', text: 'Goblin rolls 17 to hit' } })
+    s = combatReducer(s, { type: 'damage', id: 'a', amount: 4 })
+    const restored = combatReducer(s, { type: 'restore', state: before, note: 'Undid: 4 damage to a' })
+    expect(restored.combatants.find((x) => x.id === 'a')!.hp).toBe(10)
+    expect(restored.log?.map((e) => e.text)).toEqual(['Undid: 4 damage to a', 'Goblin rolls 17 to hit'])
+  })
+})

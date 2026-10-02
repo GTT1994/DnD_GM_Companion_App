@@ -2,7 +2,7 @@
 // damage, recharge, legendary actions, spell slots and upcasting, concentration, the quick roller,
 // and the panel following the turn.
 
-import { addCombatant, addMonster, assert } from '../helpers.mjs'
+import { addCombatant, addMonster, assert, startCombat } from '../helpers.mjs'
 
 export default async function ({ page, base, shot }) {
   await page.goto(base)
@@ -72,7 +72,7 @@ export default async function ({ page, base, shot }) {
 
   // Next turn opens the panel for whichever monster's turn it is. Thorin (initiative 30) goes
   // first; everyone after him is a monster, so the next turn is always a monster's.
-  await page.getByRole('button', { name: 'Start combat' }).click()
+  await startCombat(page)
   await page.locator('tr.combatant.active', { hasText: 'Thorin' }).waitFor()
   await page.getByRole('button', { name: /Next turn/ }).click()
   await page.waitForFunction(() => !document.querySelector('tr.combatant.active')?.textContent?.includes('Thorin'))

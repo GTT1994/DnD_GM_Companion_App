@@ -47,14 +47,17 @@ export async function getCombat(id: string): Promise<SavedCombat> {
 }
 
 // Applies a tracker action to a saved combat, and copies any PC HP changes back to the party.
-export function applyCombatAction(combatId: string, action: CombatAction) {
+// Returns the fight as it was before the change (kept by the combat page for Undo).
+export function applyCombatAction(combatId: string, action: CombatAction): Promise<SavedCombat> {
   return db.transaction('rw', [db.combats, db.pcs], async () => {
-    const next = combatReducer(await getCombat(combatId), action)
+    const before = await getCombat(combatId)
+    const next = combatReducer(before, action)
     await db.combats.put({ ...next, id: combatId })
     // Keep each party member's HP in step with their combatant.
     for (const c of next.combatants) {
       if (c.pcId) await db.pcs.update(c.pcId, { currentHp: c.hp, tempHp: c.tempHp })
     }
+    return before
   })
 }
 
