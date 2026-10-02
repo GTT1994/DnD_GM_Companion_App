@@ -1,6 +1,8 @@
 // Shared data types used across the app.
 // A type describes the shape of the data (like a CREATE TABLE definition) but stores nothing.
 
+import type { RichDoc } from './lib/richText'
+
 // Which version of the 5e rules to show.
 export type Edition = '2014' | '2024'
 
@@ -98,9 +100,25 @@ export type Pc = {
 }
 
 // A campaign's free-text notes page.
+// A campaign's notes: the plan for the next session and the ongoing campaign notes,
+// both formatted (stored as the editor's document, see lib/richText.ts).
 export type Note = {
   campaignId: string
-  text: string
+  doc: RichDoc          // campaign notes
+  plan: RichDoc         // this session's plan
+  updatedAt: number
+}
+
+// A past session in the session log, saved by "End session".
+export type Session = {
+  id: string
+  campaignId: string
+  number: number        // 1, 2, 3…
+  date: string          // YYYY-MM-DD
+  title: string
+  recap: RichDoc
+  plan: RichDoc         // the plan as it was at the end of the session
+  createdAt: number
   updatedAt: number
 }
 

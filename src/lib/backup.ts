@@ -2,8 +2,9 @@
 // A backup is a JSON file holding each campaign plus everything linked to it, and/or homebrew.
 
 import { db, QUICK_COMBAT, type HomebrewMonster, type HomebrewSpell, type SavedCombat, type SavedNpc } from '../db'
-import type { Campaign, Encounter, Note, Pc } from '../types'
+import type { Campaign, Encounter, Note, Pc, Session } from '../types'
 import { normaliseNpc } from './npcFields'
+import { normaliseNote } from './richText'
 
 const APP = 'gm-companion'
 const VERSION = 1
@@ -13,8 +14,9 @@ type CampaignBackup = {
   pcs: Pc[]
   combat: SavedCombat | null
   npcs: SavedNpc[]
-  notes: Note | null
+  notes: Note | null        // older backups have plain "text" instead of formatted notes
   encounters?: Encounter[]  // missing in backups made before encounters existed
+  sessions?: Session[]      // missing in backups made before the session log existed
 }
 
 export type Backup = {
@@ -39,6 +41,7 @@ export async function exportCampaigns(ids?: string[]): Promise<Backup> {
       npcs: await db.npcs.where('campaignId').equals(campaign.id).toArray(),
       notes: (await db.notes.get(campaign.id)) ?? null,
       encounters: await db.encounters.where('campaignId').equals(campaign.id).toArray(),
+      sessions: await db.sessions.where('campaignId').equals(campaign.id).toArray(),
     })
   }
   const backup: Backup = { app: APP, version: VERSION, exportedAt: new Date().toISOString(), campaigns: entries }
@@ -87,7 +90,7 @@ export async function importCampaigns(data: unknown): Promise<ImportResult> {
   if (backup?.app !== APP || !Array.isArray(backup.campaigns)) throw new Error('This file is not a GM Companion backup.')
   if (backup.version > VERSION) throw new Error('This backup was made by a newer version of the app.')
 
-  const tables = [db.campaigns, db.pcs, db.combats, db.npcs, db.notes, db.homebrewMonsters, db.homebrewSpells, db.encounters]
+  const tables = [db.campaigns, db.pcs, db.combats, db.npcs, db.notes, db.homebrewMonsters, db.homebrewSpells, db.encounters, db.sessions]
   const result: ImportResult = { campaigns: backup.campaigns.length, monsters: 0, spells: 0 }
   await db.transaction('rw', tables, async () => {
     // For each homebrew entry in the file: unchanged ones already here are skipped; ones missing here
@@ -139,7 +142,8 @@ export async function importCampaigns(data: unknown): Promise<ImportResult> {
         const statBlock = npc.statBlock && { ...npc.statBlock, index: monsterIds.get(npc.statBlock.index) ?? npc.statBlock.index }
         return { ...npc, id: crypto.randomUUID(), campaignId, ...(statBlock ? { statBlock } : {}) }
       }))
-      if (entry.notes) await db.notes.add({ ...entry.notes, campaignId })
+      if (entry.notes) await db.notes.add(normaliseNote({ ...entry.notes, campaignId }))
+      await db.sessions.bulkAdd((entry.sessions ?? []).map((session) => ({ ...session, id: crypto.randomUUID(), campaignId })))
       await db.encounters.bulkAdd((entry.encounters ?? []).map((enc) => ({
         ...enc,
         id: crypto.randomUUID(),

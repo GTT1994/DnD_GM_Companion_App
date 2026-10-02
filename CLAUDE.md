@@ -3,7 +3,7 @@
 ## Project
 A DnD 5e companion app for Game Masters, for personal use on a laptop. See [README.md](README.md) for the roadmap.
 
-**Stack:** React + TypeScript + Vite, React Router, Dexie (IndexedDB), ESLint, Vitest. SRD rules content (2014 and 2024 editions) is bundled as JSON. Campaign data lives in IndexedDB; small preferences (edition, last search) in localStorage.
+**Stack:** React + TypeScript + Vite, React Router, Dexie (IndexedDB), TipTap (formatted notes), ESLint, Vitest. SRD rules content (2014 and 2024 editions) is bundled as JSON. Campaign data lives in IndexedDB; small preferences (edition, last search) in localStorage.
 
 ## Commands
 - `npm run dev`: start the dev server at http://localhost:5173
@@ -15,13 +15,14 @@ A DnD 5e companion app for Game Masters, for personal use on a laptop. See [READ
 
 ## Layout
 - `src/App.tsx`: routes (page addresses) and the header/footer layout
-- `src/pages/`: one component per page (Home, campaign Overview, Combat, NPCs, Notes, Lookup, Generators)
+- `src/pages/`: one component per page (Home, campaign Overview with the session plan and notes, Combat, Encounters, NPCs, Sessions, Lookup, Generators)
 - `src/components/`: reusable React components (one per file)
-- `src/db.ts`: the Dexie database schema (tables: campaigns, pcs, combats, npcs, notes, homebrewMonsters, homebrewSpells, encounters). Combat id = campaign id, or `'quick'` for Quick combat. Homebrew indexes start `hb-`
+- `src/db.ts`: the Dexie database schema (tables: campaigns, pcs, combats, npcs, notes, homebrewMonsters, homebrewSpells, encounters, sessions). Combat id = campaign id, or `'quick'` for Quick combat. Homebrew indexes start `hb-`
 - `src/lib/store.ts`: all database writes go through here (PC HP carry-over, cascade delete, migration); `backup.ts` for export/import
 - `src/lib/`: other logic with no UI (dice, combat rules, generators), with `*.test.ts` files next to it. Database tests use `fake-indexeddb`
 - `src/data/`: SRD data loader (`useSrd` merges in homebrew monsters/spells for the edition), the generated JSON (`srd/<edition>/`), and hand-written tables (quick rules, NPC names)
 - `src/lib/npcFields.ts`: NPC defaults (also used by the version 4 upgrade and old backups), generated → saved NPCs, search; `npcs.ts` for NPC writes, adding to combat and portrait resizing
+- `src/lib/richText.ts`: formatted notes are stored as TipTap editor JSON (`RichDoc`); template, carry-over of unticked items, old plain text. `sessions.ts` for notes/plan saving and End session; `components/RichEditor.tsx` is the editor; `useAutosave.ts` the save-as-you-type hook
 - `src/lib/conditions.ts`: condition timers (run by `combatReducer` on each turn change) and the duration form; `saves.ts` for save bonuses, rolls and damage after a save
 - `src/lib/encounters.ts`: encounter difficulty (2014 thresholds/multipliers, 2024 budgets) and loading encounters into combat
 - `src/lib/homebrew.ts`: homebrew conversions (base + per-level dice → SRD-style tables), SRD copies, checks before saving

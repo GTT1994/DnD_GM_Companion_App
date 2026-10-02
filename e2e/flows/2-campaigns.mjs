@@ -1,5 +1,5 @@
 // Campaigns: moving an old saved fight into Quick combat, party, HP carry-over, long rest,
-// saved NPCs, notes, export/import and delete.
+// saved NPCs, campaign notes, export/import and delete.
 
 import { writeFile } from 'node:fs/promises'
 import { addPc, assert, createCampaign } from '../helpers.mjs'
@@ -31,10 +31,10 @@ export default async function ({ page, base, shot, shotsDir }) {
   await thorin.locator('.amount-input').press('Enter')
   await thorin.getByText('34 / 44').waitFor()
   await page.getByRole('link', { name: 'Overview' }).click()
-  await page.locator('.data-table tr', { hasText: 'Thorin' }).getByText('34 / 44').waitFor()
+  await page.locator('.pc-card', { hasText: 'Thorin' }).getByText('34 / 44').waitFor()
   await shot('campaign-overview')
   await page.getByRole('button', { name: 'Long rest' }).click()
-  await page.locator('.data-table tr', { hasText: 'Thorin' }).getByText('44 / 44').waitFor()
+  await page.locator('.pc-card', { hasText: 'Thorin' }).getByText('44 / 44').waitFor()
 
   // Save a generated NPC with notes.
   await page.getByRole('link', { name: 'Generators' }).click()
@@ -49,12 +49,13 @@ export default async function ({ page, base, shot, shotsDir }) {
   await page.getByRole('link', { name: '← NPCs' }).click()
   assert.equal(await page.locator('.npc-table .name-cell').innerText(), npcName)
 
-  // Notes save as you type and survive a refresh.
-  await page.getByRole('link', { name: 'Notes' }).click()
-  await page.locator('textarea.notes').fill('Strahd wants Ireena.')
-  await page.getByText('Saved', { exact: true }).waitFor()
+  // Campaign notes (on the Overview) save as you type and survive a refresh.
+  await page.getByRole('link', { name: 'Overview' }).click()
+  await page.getByRole('textbox', { name: 'Campaign notes' }).click()
+  await page.keyboard.type('Strahd wants Ireena.')
+  await page.locator('.notes-section', { hasText: 'Campaign notes' }).getByText('Saved', { exact: true }).waitFor()
   await page.reload()
-  assert.equal(await page.locator('textarea.notes').inputValue(), 'Strahd wants Ireena.')
+  assert.equal(await page.getByRole('textbox', { name: 'Campaign notes' }).innerText(), 'Strahd wants Ireena.')
 
   // Export, import a copy, delete the copy.
   await page.getByRole('link', { name: 'GM Companion' }).click()

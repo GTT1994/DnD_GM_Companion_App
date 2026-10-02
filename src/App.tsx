@@ -2,7 +2,7 @@
 // layout around every page (header with navigation and edition switch, and footer).
 
 import { useEffect, useRef } from 'react'
-import { BrowserRouter, Link, NavLink, Outlet, Route, Routes, useNavigate } from 'react-router'
+import { BrowserRouter, Link, Navigate, NavLink, Outlet, Route, Routes, useNavigate } from 'react-router'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { Edition, LookupState } from './types'
 import { db, QUICK_COMBAT } from './db'
@@ -16,7 +16,7 @@ import { CombatPage } from './pages/CombatPage'
 import { LookupPage } from './pages/LookupPage'
 import { GeneratorsPage } from './pages/GeneratorsPage'
 import { NpcPage, NpcsPage } from './pages/NpcsPage'
-import { NotesPage } from './pages/NotesPage'
+import { SessionPage, SessionsPage } from './pages/SessionsPage'
 import { HomebrewPage } from './pages/HomebrewPage'
 import { EncounterEditorPage, EncountersPage } from './pages/EncountersPage'
 import { MonsterEditorPage, SpellEditorPage } from './pages/HomebrewEditorPages'
@@ -52,7 +52,10 @@ function App() {
               <Route path="encounters/:encounterId" element={<EncounterEditorPage />} />
               <Route path="npcs" element={<NpcsPage />} />
               <Route path="npcs/:npcId" element={<NpcPage />} />
-              <Route path="notes" element={<NotesPage />} />
+              <Route path="sessions" element={<SessionsPage />} />
+              <Route path="sessions/:sessionId" element={<SessionPage />} />
+              {/* Notes moved to the Overview; old links go there */}
+              <Route path="notes" element={<Navigate to=".." relative="path" replace />} />
               <Route path="lookup" element={<LookupPage />} />
               <Route path="generators" element={<GeneratorsPage />} />
             </Route>
@@ -97,7 +100,7 @@ function Layout() {
         { to: `${base}/combat`, label: 'Combat' },
         { to: `${base}/encounters`, label: 'Encounters' },
         { to: `${base}/npcs`, label: 'NPCs' },
-        { to: `${base}/notes`, label: 'Notes' },
+        { to: `${base}/sessions`, label: 'Sessions' },
         { to: `${base}/lookup`, label: 'Quick Lookup' },
         { to: `${base}/generators`, label: 'Generators' },
         { to: '/homebrew', label: 'Homebrew' },  // shared by every campaign

@@ -7,9 +7,12 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 ## Features
 
 **Home page and campaigns**
-- Create campaigns, each with its own party, fight, NPCs, encounters and notes
+- Create campaigns, each with its own party, fight, NPCs, encounters, notes and session log
 - **Quick combat** for one-off fights outside any campaign (remembered until you clear it)
-- Party table with AC, HP and passive Perception / Insight / Investigation, class, level and player
+- The campaign **Overview** is laid out for running a session:
+  - Left: **This session**, a formatted plan (headings, bold, lists, tick-boxes) with a **Start from template** button (strong start, scenes, secrets & clues, NPCs, locations, encounters, treasure), and **Campaign notes** below it. Both save as you type
+  - Right: party cards (HP bar, AC, passive Perception / Insight / Investigation, class, level and player) and **Planned encounters** with their difficulty and **Load into combat**
+- **End session** saves the plan and a recap to the **Sessions** log (number, date, title), then starts the next plan with the unticked items carried over. Past sessions can be opened and edited
 - PC HP carries over between fights until you heal them or take a **Long rest**
 - **Add party** puts every PC into the campaign's fight at their current HP
 - Export a campaign (or everything) to a backup file, and import it again, e.g. on another computer
@@ -88,13 +91,14 @@ Prepared encounters with difficulty for the party, loaded into combat with group
 ### NPCs ✅
 Custom NPCs with species, gender, role, location, faction, attitude, status, portrait, Markdown notes and a stat block for combat.
 
+### Session prep and log ✅
+Session plan with a template and tick-boxes, formatted campaign notes, party cards, planned encounters on the Overview, and End session into an editable session log.
+
 ### Combat quality of life ✅
 Condition durations, saves waiting above the tracker (save ends and concentration), monster saving throw buttons and group saves.
 
 ### Later: All-in-one toolkit
-- Session prep: scenes, secrets and clues, planned encounters
 - Campaign wiki: locations, factions and items, linked to each other and to NPCs
-- Session log and recaps
 - More generators: random encounters, taverns and shops, weather, rumours
 - Optional: sync between devices, a second-screen view for players
 
@@ -106,8 +110,9 @@ Condition durations, saves waiting above the tracker (save ends and concentratio
 | UI | React + Vite |
 | Storage | IndexedDB (the browser's built-in database) via [Dexie](https://dexie.org/); small preferences in localStorage |
 | Page addresses | React Router |
+| Formatted notes | [TipTap](https://tiptap.dev/) editor |
 | Rules data | SRD content bundled as JSON, built from [5e-database](https://github.com/5e-bits/5e-database) |
-| Tests | Vitest |
+| Tests | Vitest (unit), playwright-core with Chrome (browser flows) |
 
 ## Getting Started
 

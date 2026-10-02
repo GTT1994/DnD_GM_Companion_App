@@ -10,6 +10,7 @@ import { blankMonster } from './homebrew'
 import { filterNpcs, normaliseNpc, npcFromGenerated } from './npcFields'
 import { addNpcToCombat, createNpc, duplicateNpc } from './npcs'
 import { generateNpc } from './generators'
+import { textToDoc } from './richText'
 
 beforeEach(async () => {
   await Promise.all(db.tables.map((t) => t.clear()))
@@ -99,7 +100,7 @@ describe('NPCs in backups', () => {
     const result = await importCampaigns({
       app: 'gm-companion', version: 1, exportedAt: '', campaigns: [{
         campaign: { id: 'old', name: 'Old', description: '', createdAt: 1, lastOpenedAt: 1 },
-        pcs: [], combat: null, notes: null,
+        pcs: [], combat: null, notes: { campaignId: 'old', text: 'Old notes', updatedAt: 1 } as never,
         npcs: [{ id: 'x', campaignId: 'old', name: 'Bryn', ancestry: 'Elf', occupation: 'Sage', appearance: '', personality: '', mannerism: '', motivation: '', secret: '', notes: '', savedAt: 1 }],
       }],
     })
@@ -107,6 +108,8 @@ describe('NPCs in backups', () => {
     const [npc] = await db.npcs.toArray()
     expect(npc).toMatchObject({ name: 'Bryn', species: 'Elf', role: 'Sage', status: 'alive' })
     expect(npc.campaignId).not.toBe('old')
+    // Plain-text notes from an old backup are converted too.
+    expect((await db.notes.get(npc.campaignId))?.doc).toEqual(textToDoc('Old notes'))
   })
 
   it('brings a homebrew stat block along with the campaign and keeps the link', async () => {

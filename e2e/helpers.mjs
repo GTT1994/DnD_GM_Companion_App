@@ -57,7 +57,7 @@ export async function addPc(page, { name, level = 5, ac = 15, hp = 30, perceptio
   await page.getByLabel('Max HP', { exact: true }).fill(String(hp))
   if (perception) await page.getByLabel('Passive Perception', { exact: true }).fill(String(perception))
   await page.getByRole('button', { name: 'Add to party' }).click()
-  await page.locator('.data-table tr', { hasText: name }).waitFor()
+  await page.locator('.pc-card', { hasText: name }).waitFor()
 }
 
 // Drop-downs: their accessible name includes the selected option, so match the label's start.

@@ -10,7 +10,7 @@ export default async function ({ page, base, shot }) {
   for (const name of ['Thorin', 'Jazz', 'Astor', 'Mira']) await addPc(page, { name, level: 3, hp: 25 })
 
   // Six goblins.
-  await page.getByRole('link', { name: 'Encounters' }).click()
+  await page.getByRole('link', { name: 'Encounters', exact: true }).click()
   await page.getByRole('button', { name: '+ New encounter' }).click()
   await page.waitForURL(/\/encounters\/[\w-]+$/)
   await page.getByLabel('Name', { exact: true }).fill('Goblin ambush')
@@ -38,7 +38,7 @@ export default async function ({ page, base, shot }) {
   // A wolf already in the fight → Replace removes it, keeps nobody else, adds the party.
   await page.getByRole('link', { name: 'Combat', exact: true }).click()
   await addCombatant(page, { name: 'Wolf', hp: 11, ac: 13, player: false })
-  await page.getByRole('link', { name: 'Encounters' }).click()
+  await page.getByRole('link', { name: 'Encounters', exact: true }).click()
   await page.getByRole('link', { name: 'Goblin ambush' }).click()
   await page.getByRole('button', { name: 'Load into combat' }).click()
   await page.getByRole('button', { name: 'Replace them' }).click()
@@ -52,7 +52,7 @@ export default async function ({ page, base, shot }) {
   assert.ok(goblins.every((r) => r.hp === '7 / 7'), 'average HP')
   await shot('encounter-loaded')
 
-  await page.getByRole('link', { name: 'Encounters' }).click()
+  await page.getByRole('link', { name: 'Encounters', exact: true }).click()
   assert.equal(await page.locator('.data-table tbody tr .tag').first().innerText(), 'Used')
 
   // Rolled HP, added to the goblins already there.

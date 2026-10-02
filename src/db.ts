@@ -3,9 +3,10 @@
 // first, then any indexed columns (other columns don't need declaring).
 
 import Dexie, { type Table } from 'dexie'
-import type { Campaign, CombatState, Edition, Encounter, Note, Npc, Pc } from './types'
+import type { Campaign, CombatState, Edition, Encounter, Note, Npc, Pc, Session } from './types'
 import type { Monster, Spell } from './data/srd'
 import { normaliseNpc } from './lib/npcFields'
+import { normaliseNote } from './lib/richText'
 
 // A combat saved in the database. Its id is the campaign's id, or 'quick' for Quick combat.
 export type SavedCombat = CombatState & { id: string }
@@ -42,6 +43,7 @@ class GmDatabase extends Dexie {
   homebrewMonsters!: Table<HomebrewMonster, string>
   homebrewSpells!: Table<HomebrewSpell, string>
   encounters!: Table<Encounter, string>
+  sessions!: Table<Session, string>
 
   constructor() {
     super('gm-companion')
@@ -70,6 +72,14 @@ class GmDatabase extends Dexie {
       Object.assign(npc, normaliseNpc(npc))
       delete npc.ancestry
       delete npc.occupation
+    }))
+    // Version 5 adds the session log, and formatted notes with a session plan: plain-text notes
+    // become paragraphs in the new format.
+    this.version(5).stores({
+      sessions: 'id, campaignId',
+    }).upgrade((tx) => tx.table('notes').toCollection().modify((note) => {
+      Object.assign(note, normaliseNote(note))
+      delete note.text
     }))
   }
 }
