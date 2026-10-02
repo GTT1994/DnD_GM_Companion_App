@@ -9,7 +9,13 @@ export type RichDoc = JSONContent  // { type: 'doc', content: [ ...blocks ] }
 export const emptyDoc = (): RichDoc => ({ type: 'doc', content: [] })
 
 const text = (value: string): JSONContent => ({ type: 'text', text: value })
-const heading = (value: string, level = 2): JSONContent => ({ type: 'heading', attrs: { level }, content: [text(value)] })
+export const heading = (value: string, level = 2): JSONContent => ({ type: 'heading', attrs: { level }, content: [text(value)] })
+export const paragraph = (value: string): JSONContent => ({ type: 'paragraph', content: [text(value)] })
+export const bulletList = (lines: string[]): JSONContent => ({
+  type: 'bulletList',
+  content: lines.map((line) => ({ type: 'listItem', content: [paragraph(line)] })),
+})
+export const taskList = (lines: string[]): JSONContent => ({ type: 'taskList', content: lines.map((line) => taskItem(line)) })
 const taskItem = (value = '', checked = false): JSONContent => ({
   type: 'taskItem',
   attrs: { checked },
@@ -80,3 +86,29 @@ export function normaliseNote(old: { campaignId: string; text?: string; doc?: Ri
     updatedAt: old.updatedAt ?? Date.now(),
   }
 }
+
+// Adds blocks to the section under a heading (e.g. "Secrets & clues"), after anything already there.
+// Tick-boxes join the section's tick-box list, replacing an empty one left by the template.
+// If there's no such heading, the heading and blocks are added at the end.
+export function addUnderHeading(doc: RichDoc | undefined, title: string, blocks: JSONContent[]): RichDoc {
+  const content = [...(doc?.content ?? [])]
+  const isTitle = (b: JSONContent) => b.type === 'heading' && b.attrs?.level === 2 && docToText({ type: 'doc', content: [b] }) === title
+  const start = content.findIndex(isTitle)
+  if (start === -1) return { type: 'doc', content: [...content, heading(title), ...blocks] }
+  // The section ends at the next level 2 heading.
+  const next = content.findIndex((b, i) => i > start && b.type === 'heading' && b.attrs?.level === 2)
+  const end = next === -1 ? content.length : next
+  const toAdd = [...blocks]
+  const last = content[end - 1]
+  if (end - 1 > start && last.type === 'taskList' && toAdd[0]?.type === 'taskList') {
+    // Join the lists, dropping empty template tick-boxes.
+    const filled = (last.content ?? []).filter((item) => !isEmptyDoc({ type: 'doc', content: item.content ?? [] }))
+    content[end - 1] = { ...last, content: [...filled, ...(toAdd.shift()!.content ?? [])] }
+  }
+  content.splice(end, 0, ...toAdd)
+  return { type: 'doc', content }
+}
+
+// Adds blocks to the end of a document.
+export const appendBlocks = (doc: RichDoc | undefined, blocks: JSONContent[]): RichDoc =>
+  ({ type: 'doc', content: [...(doc?.content ?? []), ...blocks] })

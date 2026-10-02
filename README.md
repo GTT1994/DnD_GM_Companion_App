@@ -50,7 +50,7 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - Everything is saved in the browser's database, so a refresh doesn't lose the fight
 
 **Quick lookup** (press **⌘K** anywhere)
-- Search conditions, monsters, spells, magic items and rules, or all of them at once
+- Search conditions, monsters, spells, magic items, equipment (with prices, damage and armour class) and rules, or all of them at once
 - Full monster stat blocks with **Add to combat** (each monster rolls its own initiative)
 - Quick rules for the things GMs look up most (cover, DCs, exhaustion, grappling, travel pace…), plus the full SRD rules sections for 2014
 - Switch between the **2014** and **2024** rules in the top right
@@ -63,9 +63,15 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - Tag each entry 2014, 2024 or Both; homebrew appears in Quick Lookup and works in the combat tracker's actions panel like SRD content
 - Export / import the homebrew library on its own (and it's included in **Export all**)
 
-**Generators**
-- NPCs: name by ancestry, occupation, looks, personality, mannerism, motivation and a secret; save the good ones to a campaign
-- Loot: individual treasure or hoards by challenge rating, with gems and SRD magic items (click an item to read it)
+**Generators** (one tab each; inside a campaign, results can be saved to it)
+- **NPC**: name by species and gender, occupation, looks, personality, mannerism, motivation and a secret; save the good ones as NPCs
+- **Names**: ten names at a time by species and gender; **Make NPC** on any of them
+- **Encounter**: monsters from an environment (forest, underdark, urban…) at the difficulty you pick, balanced for the party (or a size and level you type), with a reason they're there. **Save as encounter** or **Load into combat**. Homebrew monsters can be given environments
+- **Rumours & hooks**: rumours marked true, partly true or false (with what's really going on), and plot hooks with a giver, goal, catch and reward
+- **Tavern**: name, innkeeper, atmosphere, patrons, menu and prices, and rumours
+- **Shop**: general store, blacksmith, alchemist, fletcher or magic shop in a village, town or city, with a shopkeeper and priced stock (click an item to look it up)
+- **Loot**: individual treasure or hoards by challenge rating, with gems and SRD magic items
+- Rumours, hooks, taverns and shops have **Add to session plan** (under the template's matching heading) and **Add to campaign notes**; innkeepers and shopkeepers can be saved as NPCs
 
 ## Goals
 
@@ -97,12 +103,15 @@ Custom NPCs with species, gender, role, location, faction, attitude, status, por
 ### Session prep and log ✅
 Session plan with a template and tick-boxes, formatted campaign notes, party cards, planned encounters on the Overview, and End session into an editable session log.
 
+### More generators ✅
+Names, random encounters by environment, rumours and plot hooks, taverns and shops, plus equipment in Quick Lookup.
+
 ### Combat quality of life ✅
 Condition durations, saves waiting above the tracker (save ends and concentration), monster saving throw buttons, group saves, the initiative prompt, Undo / Redo, Reset combat, and resistances / immunities / vulnerabilities applied to damage.
 
 ### Later: All-in-one toolkit
 - Campaign wiki: locations, factions and items, linked to each other and to NPCs
-- More generators: random encounters, taverns and shops, weather, rumours
+- More generators: weather, travel events, settlements, dungeon dressing and traps
 - Optional: sync between devices, a second-screen view for players
 
 ## Tech Stack
@@ -148,6 +157,8 @@ npm run srd    # re-download the SRD data into src/data/srd/
 - **Previous turn** moves the turn marker back but doesn't undo condition timers that ran out or counted down; use **Undo** to fully reverse a Next turn.
 - **Undo history** lasts while the combat page is open, and covers changes made in the tracker (not monsters added from Quick Lookup, encounters, NPCs or Add party).
 - **Group save damage** from a monster's action uses its first damage part (e.g. a breath weapon's dice); edit the box for anything else.
+- **Monster environments** for random encounters were tagged by hand in `src/data/environments.ts` (the SRD data doesn't have them), loosely following the DMG. Adjust the lists to taste.
+- **Magic item prices** in shops are hand-written bands by rarity, since the SRD doesn't price magic items. Mundane equipment uses the SRD list prices.
 - **Unusual resistances** the app can't check (e.g. "from magic weapons wielded by good creatures", "damage from spells", silvered or adamantine weapons) are shown with a ⚠ on the tag and not applied automatically.
 - **NPC portraits** are shrunk to 256 px and stored in the database, so each one adds roughly 10–30 KB to a backup file.
 - **Data lives in this browser only.** Clearing site data deletes it, so use **Export all** on the home page for backups.

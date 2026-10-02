@@ -1,20 +1,35 @@
-// Tests for the NPC and loot generators.
+// Tests for the NPC, name and loot generators.
 
 import { describe, expect, it } from 'vitest'
 import type { MagicItem } from '../data/srd'
 import { ancestries } from '../data/npcTables'
-import { generateLoot, generateNpc } from './generators'
+import { generateLoot, generateNames, generateNpc } from './generators'
 
 const item = (name: string, rarity: string): MagicItem =>
   ({ index: name, name, rarity, category: 'Wondrous Items', attunement: false, desc: '' })
 
 describe('generateNpc', () => {
-  it('uses names from the chosen ancestry', () => {
-    const npc = generateNpc('Dwarf')
+  it('uses names from the chosen species and gender', () => {
+    const npc = generateNpc('Dwarf', Math.random, { gender: 'Female', occupation: 'innkeeper' })
     const [first, last] = npc.name.split(' ')
-    expect(npc.ancestry).toBe('Dwarf')
-    expect(ancestries.Dwarf.first).toContain(first)
+    expect(npc).toMatchObject({ ancestry: 'Dwarf', gender: 'Female', occupation: 'innkeeper' })
+    expect(ancestries.Dwarf.female).toContain(first)
     expect(ancestries.Dwarf.last).toContain(last)
+  })
+})
+
+describe('generateNames', () => {
+  it('gives different names, all of the chosen gender', () => {
+    const names = generateNames('Elf', 'Male', 10)
+    expect(names).toHaveLength(10)
+    expect(new Set(names.map((n) => n.name)).size).toBe(10)
+    expect(names.every((n) => n.gender === 'Male' && ancestries.Elf.male.includes(n.name.split(' ')[0]))).toBe(true)
+  })
+
+  it('mixes species and genders when not chosen', () => {
+    const names = generateNames(undefined, undefined, 30)
+    expect(new Set(names.map((n) => n.species)).size).toBeGreaterThan(3)
+    expect(new Set(names.map((n) => n.gender))).toEqual(new Set(['Female', 'Male']))
   })
 })
 

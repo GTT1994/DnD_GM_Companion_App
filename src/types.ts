@@ -65,7 +65,7 @@ export type CombatState = {
 }
 
 // The kinds of SRD entry that Quick Lookup can show.
-export type LookupCategory = 'conditions' | 'monsters' | 'spells' | 'magic-items' | 'rules'
+export type LookupCategory = 'conditions' | 'monsters' | 'spells' | 'magic-items' | 'equipment' | 'rules'
 
 // What Quick Lookup is showing: the category tab, the search text and the open entry.
 export type LookupState = {

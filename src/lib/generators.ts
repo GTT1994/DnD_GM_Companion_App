@@ -2,7 +2,7 @@
 
 import type { MagicItem } from '../data/srd'
 import {
-  ancestries, appearances, mannerisms, motivations, occupations, personalities, secrets, type Ancestry,
+  ancestries, appearances, mannerisms, motivations, occupations, personalities, secrets, type Ancestry, type Gender,
 } from '../data/npcTables'
 import { pick, pickWeighted, roll, type Random } from './dice'
 
@@ -11,7 +11,8 @@ import { pick, pickWeighted, roll, type Random } from './dice'
 export type Npc = {
   id: string
   name: string
-  ancestry: Ancestry
+  ancestry: Ancestry     // the species
+  gender: Gender
   occupation: string
   appearance: string
   personality: string
@@ -20,15 +21,34 @@ export type Npc = {
   secret: string
 }
 
-// Makes a random NPC. Pass an ancestry to choose it, or leave it out for a random one.
-export function generateNpc(ancestry?: Ancestry, random: Random = Math.random): Npc {
-  const chosen = ancestry ?? pick(Object.keys(ancestries) as Ancestry[], random)
-  const names = ancestries[chosen]
+// One random name for a species and gender (random species / gender when left out).
+export function randomName(ancestry?: Ancestry, gender?: Gender, random: Random = Math.random) {
+  const species = ancestry ?? pick(Object.keys(ancestries) as Ancestry[], random)
+  const chosenGender = gender ?? pick<Gender>(['Female', 'Male'], random)
+  const names = ancestries[species]
+  const first = pick(chosenGender === 'Female' ? names.female : names.male, random)
+  return { name: `${first} ${pick(names.last, random)}`, species, gender: chosenGender }
+}
+
+// A batch of different names, for the Names tab.
+export function generateNames(ancestry?: Ancestry, gender?: Gender, count = 10, random: Random = Math.random) {
+  const result: ReturnType<typeof randomName>[] = []
+  for (let tries = 0; result.length < count && tries < count * 10; tries++) {
+    const next = randomName(ancestry, gender, random)
+    if (!result.some((r) => r.name === next.name)) result.push(next)
+  }
+  return result
+}
+
+// Makes a random NPC. Pass a species, gender or occupation to choose them, or leave them out.
+export function generateNpc(ancestry?: Ancestry, random: Random = Math.random, options: { gender?: Gender; occupation?: string } = {}): Npc {
+  const { name, species, gender } = randomName(ancestry, options.gender, random)
   return {
     id: crypto.randomUUID(),
-    name: `${pick(names.first, random)} ${pick(names.last, random)}`,
-    ancestry: chosen,
-    occupation: pick(occupations, random),
+    name,
+    ancestry: species,
+    gender,
+    occupation: options.occupation ?? pick(occupations, random),
     appearance: pick(appearances, random),
     personality: pick(personalities, random),
     mannerism: pick(mannerisms, random),

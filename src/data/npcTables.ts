@@ -1,44 +1,77 @@
-// Hand-written tables for the NPC generator: names by ancestry, plus details
-// to give an improvised NPC some personality.
+// Hand-written tables for the NPC and name generators: names by species and gender, plus
+// details to give an improvised NPC some personality.
+
+// Names by species: female and male first names, and family names (or clan / epithet names).
+type NameList = { female: string[]; male: string[]; last: string[] }
+
+const human: NameList = {
+  female: ['Bryn', 'Dara', 'Edda', 'Helena', 'Jessa', 'Lyra', 'Marta', 'Petra', 'Sabine', 'Wren', 'Ilse', 'Mirela', 'Agnes', 'Tamsin'],
+  male: ['Aldric', 'Cedric', 'Garrick', 'Ivo', 'Kendrick', 'Osric', 'Rowan', 'Tomas', 'Bram', 'Emeric', 'Hale', 'Joren', 'Matthias', 'Silas'],
+  last: ['Ashford', 'Blackwood', 'Carver', 'Dunmore', 'Fairweather', 'Greaves', 'Hale', 'Marsh', 'Thatcher', 'Underhill', 'Vance', 'Whitlock'],
+}
+const elf: NameList = {
+  female: ['Caelynn', 'Enna', 'Ielenia', 'Keyleth', 'Naivara', 'Quelenna', 'Birel', 'Lia', 'Mialee', 'Sariel', 'Valanthe', 'Shava'],
+  male: ['Adran', 'Aelar', 'Galinndan', 'Soveliss', 'Thamior', 'Erevan', 'Heian', 'Ivellios', 'Paelias', 'Riardon', 'Varis', 'Theren'],
+  last: ['Amakiir', 'Galanodel', 'Holimion', 'Ilphelkiir', 'Liadon', 'Meliamne', 'Nailo', 'Siannodel'],
+}
+const orc: NameList = {
+  female: ['Baggi', 'Emen', 'Engong', 'Kansif', 'Myev', 'Ovak', 'Shautha', 'Sutha', 'Vola', 'Yevelda'],
+  male: ['Dench', 'Feng', 'Gell', 'Henk', 'Holg', 'Imsh', 'Keth', 'Krusk', 'Mhurren', 'Ront', 'Shump', 'Thokk'],
+  last: ['Bonebreaker', 'Grimtusk', 'Ironhide', 'Redfang', 'Skullsplitter', 'Stormborn'],
+}
 
 export const ancestries = {
-  Human: {
-    first: ['Aldric', 'Bryn', 'Cedric', 'Dara', 'Edda', 'Garrick', 'Helena', 'Ivo', 'Jessa', 'Kendrick', 'Lyra', 'Marta', 'Osric', 'Petra', 'Rowan', 'Sabine', 'Tomas', 'Wren'],
-    last: ['Ashford', 'Blackwood', 'Carver', 'Dunmore', 'Fairweather', 'Greaves', 'Hale', 'Marsh', 'Thatcher', 'Underhill', 'Vance', 'Whitlock'],
-  },
+  Human: human,
   Dwarf: {
-    first: ['Adrik', 'Baern', 'Dagnal', 'Eberk', 'Gunnloda', 'Helja', 'Kathra', 'Morgran', 'Orsik', 'Riswynn', 'Thorgrim', 'Vistra'],
+    female: ['Gunnloda', 'Helja', 'Kathra', 'Riswynn', 'Vistra', 'Amber', 'Bardryn', 'Dagnal', 'Eldeth', 'Falkrunn', 'Hlin', 'Torbera'],
+    male: ['Adrik', 'Baern', 'Eberk', 'Morgran', 'Orsik', 'Thorgrim', 'Bruenor', 'Dain', 'Harbek', 'Rurik', 'Tordek', 'Vondal'],
     last: ['Battlehammer', 'Fireforge', 'Gorunn', 'Ironfist', 'Loderr', 'Stonehelm', 'Strakeln', 'Torunn'],
   },
-  Elf: {
-    first: ['Adran', 'Aelar', 'Birel', 'Caelynn', 'Enna', 'Galinndan', 'Ielenia', 'Keyleth', 'Naivara', 'Quelenna', 'Soveliss', 'Thamior'],
-    last: ['Amakiir', 'Galanodel', 'Holimion', 'Ilphelkiir', 'Liadon', 'Meliamne', 'Nailo', 'Siannodel'],
+  Elf: elf,
+  'Half-Elf': {
+    female: [...human.female.slice(0, 6), ...elf.female.slice(0, 6)],
+    male: [...human.male.slice(0, 6), ...elf.male.slice(0, 6)],
+    last: [...human.last.slice(0, 6), ...elf.last.slice(0, 4)],
   },
   Halfling: {
-    first: ['Alton', 'Andry', 'Bree', 'Cade', 'Callie', 'Eldon', 'Kithri', 'Lavinia', 'Merric', 'Nedda', 'Perrin', 'Seraphina'],
+    female: ['Andry', 'Bree', 'Callie', 'Kithri', 'Lavinia', 'Nedda', 'Seraphina', 'Cora', 'Euphemia', 'Jillian', 'Merla', 'Verna'],
+    male: ['Alton', 'Cade', 'Eldon', 'Merric', 'Perrin', 'Corrin', 'Finnan', 'Garret', 'Lyle', 'Milo', 'Osborn', 'Roscoe'],
     last: ['Brushgather', 'Goodbarrel', 'Greenbottle', 'Highhill', 'Hilltopple', 'Leagallow', 'Tealeaf', 'Thorngage'],
   },
   Gnome: {
-    first: ['Alston', 'Bimpnottin', 'Boddynock', 'Carlin', 'Ellyjobell', 'Frug', 'Lorilla', 'Nissa', 'Orryn', 'Roywyn', 'Wrenn', 'Zook'],
+    female: ['Bimpnottin', 'Ellyjobell', 'Lorilla', 'Nissa', 'Roywyn', 'Wrenn', 'Breena', 'Carlin', 'Donella', 'Ellywick', 'Mardnab', 'Zanna'],
+    male: ['Alston', 'Boddynock', 'Frug', 'Orryn', 'Zook', 'Alvyn', 'Brocc', 'Dimble', 'Eldon', 'Fonkin', 'Gimble', 'Glim'],
     last: ['Beren', 'Daergel', 'Folkor', 'Garrick', 'Nackle', 'Murnig', 'Scheppen', 'Turen'],
   },
-  Orc: {
-    first: ['Dench', 'Emen', 'Feng', 'Gell', 'Henk', 'Holg', 'Kansif', 'Myev', 'Ovak', 'Shautha', 'Sutha', 'Yevelda'],
-    last: ['Bonebreaker', 'Grimtusk', 'Ironhide', 'Redfang', 'Skullsplitter', 'Stormborn'],
+  Orc: orc,
+  'Half-Orc': {
+    female: [...orc.female.slice(0, 6), ...human.female.slice(6, 12)],
+    male: [...orc.male.slice(0, 6), ...human.male.slice(6, 12)],
+    last: [...orc.last, ...human.last.slice(6, 10)],
   },
   Tiefling: {
-    first: ['Akmenos', 'Bryseis', 'Damakos', 'Ekemon', 'Kallista', 'Leucis', 'Makaria', 'Nemeia', 'Orianna', 'Skamos'],
+    female: ['Bryseis', 'Kallista', 'Makaria', 'Nemeia', 'Orianna', 'Akta', 'Anakis', 'Criella', 'Damaia', 'Lerissa', 'Rieta', 'Ea'],
+    male: ['Akmenos', 'Damakos', 'Ekemon', 'Leucis', 'Skamos', 'Amnon', 'Barakas', 'Iados', 'Kairon', 'Mordai', 'Pelaios', 'Therai'],
     last: ['Ash', 'Despair', 'Hope', 'Ruin', 'Sorrow', 'Torment', 'Whisper', 'Vigil'],
   },
   Dragonborn: {
-    first: ['Arjhan', 'Akra', 'Balasar', 'Biri', 'Donaar', 'Harann', 'Kava', 'Medrash', 'Nala', 'Sora', 'Torinn', 'Uadjit'],
+    female: ['Akra', 'Biri', 'Kava', 'Nala', 'Sora', 'Uadjit', 'Daar', 'Farideh', 'Harann', 'Jheri', 'Mishann', 'Perra'],
+    male: ['Arjhan', 'Balasar', 'Donaar', 'Medrash', 'Torinn', 'Bharash', 'Ghesh', 'Heskan', 'Kriv', 'Nadarr', 'Pandjed', 'Shamash'],
     last: ['Clethtinthiallor', 'Daardendrian', 'Delmirev', 'Kepeshkmolik', 'Myastan', 'Norixius', 'Turnuroth', 'Yarjerit'],
   },
   Goliath: {
-    first: ['Aukan', 'Eglath', 'Gae-Al', 'Ilikan', 'Keothi', 'Kuori', 'Manneo', 'Nalla', 'Orilo', 'Paavu', 'Thalai', 'Vaunea'],
+    female: ['Eglath', 'Gae-Al', 'Keothi', 'Kuori', 'Nalla', 'Orilo', 'Thalai', 'Vaunea', 'Aki', 'Mai', 'Thotham', 'Uthal'],
+    male: ['Aukan', 'Ilikan', 'Manneo', 'Paavu', 'Gauthak', 'Kavaki', 'Lo-Kag', 'Maveith', 'Meavoi', 'Pethani', 'Thalai', 'Vimak'],
     last: ['Bearkiller', 'Dawncaller', 'Horncarver', 'Longleaper', 'Rootsmasher', 'Threadtwister'],
   },
-} as const
+  Aasimar: {
+    female: ['Arken', 'Arwen', 'Chaya', 'Davina', 'Elysia', 'Imperia', 'Kiriel', 'Lumina', 'Seraphiel', 'Theodora', 'Vela', 'Zariel'],
+    male: ['Aldrich', 'Barachiel', 'Castiel', 'Ezra', 'Gideon', 'Ishmael', 'Lucien', 'Malachi', 'Rafael', 'Tobias', 'Uriel', 'Zeke'],
+    last: ['Brightwater', 'Dawnward', 'Goldenmere', 'Lightbringer', 'Morningstar', 'Silverhand', 'Starfall', 'Truesong'],
+  },
+} satisfies Record<string, NameList>
+
+export type Gender = 'Female' | 'Male'
 
 export type Ancestry = keyof typeof ancestries
 

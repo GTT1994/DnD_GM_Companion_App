@@ -1,4 +1,5 @@
-// Downloads the SRD rules data (2014 and 2024 editions) from the 5e-bits/5e-database
+// Downloads the SRD rules data (2014 and 2024 editions: monsters, spells, conditions, magic items,
+// equipment and, for 2014, rules sections) from the 5e-bits/5e-database
 // project and trims it down to the fields the app uses, writing one JSON file per
 // category to src/data/srd/<edition>/. Run with: npm run srd
 
@@ -258,6 +259,62 @@ function magicItem(item) {
   }
 }
 
+// --- Equipment (for Quick Lookup and the shop generator) ----------------------
+
+// The value of a cost in gold pieces, e.g. { quantity: 5, unit: 'sp' } → 0.5.
+const GP = { cp: 0.01, sp: 0.1, ep: 0.5, gp: 1, pp: 10 }
+
+// One main category for both editions (2024 lists several, from specific to general).
+function equipmentCategory(item) {
+  const names = item.equipment_category ? [item.equipment_category.name] : (item.equipment_categories ?? []).map((c) => c.name)
+  if (names.some((n) => /weapon/i.test(n)) && item.damage) return 'Weapon'
+  if (names.some((n) => /^armor$/i.test(n))) return 'Armor'
+  if (names.some((n) => /tools/i.test(n))) return 'Tools'
+  if (names.some((n) => /mounts|vehicles/i.test(n))) return 'Mounts and Vehicles'
+  if (names.some((n) => /ammunition/i.test(n)) || item.gear_category?.index === 'ammunition') return 'Ammunition'
+  return 'Adventuring Gear'
+}
+
+// The more specific kind, e.g. "Martial Melee", "Heavy", "Artisan's Tools".
+function equipmentDetail(item) {
+  if (item.category_range) return item.category_range
+  if (item.armor_category) return item.armor_category
+  if (item.tool_category) return item.tool_category
+  if (item.vehicle_category) return item.vehicle_category
+  if (item.gear_category && item.gear_category.index !== 'standard-gear') return item.gear_category.name
+  const names = (item.equipment_categories ?? []).map((c) => c.name)
+  return names.find((n) => /martial|simple|light|medium|heavy|shield|artisan|musical|gaming|foci|holy|packs/i.test(n))?.replace(/ (Weapons|Armor)$/, '')
+}
+
+// Armour class as written in the rules, e.g. "16", "11 + Dex", "12 + Dex (max 2)", "+2".
+function armorClass(ac) {
+  if (!ac) return undefined
+  if (!ac.dex_bonus) return ac.base < 10 ? `+${ac.base}` : String(ac.base)
+  return ac.max_bonus ? `${ac.base} + Dex (max ${ac.max_bonus})` : `${ac.base} + Dex`
+}
+
+function equipment(item) {
+  const damage = item.damage?.damage_dice
+    ? `${item.damage.damage_dice} ${item.damage.damage_type?.name ?? ''}`.trim() + (item.two_handed_damage ? ` (two-handed ${item.two_handed_damage.damage_dice})` : '')
+    : undefined
+  const properties = [...(item.properties ?? []).map((p) => p.name), ...(item.mastery ? [`Mastery: ${item.mastery.name}`] : [])]
+  return {
+    index: item.index,
+    name: item.name,
+    category: equipmentCategory(item),
+    detail: equipmentDetail(item),
+    cost: item.cost ? `${item.cost.quantity} ${item.cost.unit}` : undefined,
+    costGp: item.cost ? Math.round(item.cost.quantity * (GP[item.cost.unit] ?? 1) * 100) / 100 : undefined,
+    weight: item.weight,
+    damage,
+    properties: properties.length ? properties : undefined,
+    ac: armorClass(item.armor_class),
+    strength: item.str_minimum || undefined,
+    stealthDisadvantage: item.stealth_disadvantage || undefined,
+    desc: toText(item.desc) ?? item.description,
+  }
+}
+
 function ruleSection(r) {
   // Drop the first heading, since the app shows the section name as its own title.
   return { index: r.index, name: r.name, desc: r.desc.replace(/^#+ .*\n+/, '') }
@@ -277,6 +334,7 @@ async function build(edition) {
     conditions: (await load(edition, 'Conditions')).map(condition),
     // Skip "parent" items whose rarity depends on the variant (e.g. "Armor, +1, +2, or +3").
     'magic-items': (await load(edition, 'Magic-Items')).map(magicItem).filter((i) => i.rarity !== 'Varies'),
+    equipment: (await load(edition, 'Equipment')).map(equipment),
   }
   // The 2024 data has no rule sections yet; the app falls back to its own quick rules.
   if (edition === '2014') files.rules = (await load(edition, 'Rule-Sections')).map(ruleSection)

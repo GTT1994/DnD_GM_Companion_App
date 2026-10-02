@@ -5,6 +5,7 @@ import { db, type HomebrewEdition, type HomebrewMonster, type HomebrewSpell } fr
 import type { Feature, Monster, MonsterSpell, Spell } from '../data/srd'
 import type { Edition } from '../types'
 import { addDice, multiplyDice, parseDice } from './dice'
+import { environmentsOf } from '../data/environments'
 
 // Does a homebrew entry show up in this edition? Like WHERE edition IN (@edition, 'both').
 export function matchesEdition(tag: HomebrewEdition, edition: Edition): boolean {
@@ -113,8 +114,9 @@ export function blankMonster(edition: HomebrewEdition): HomebrewMonster {
 }
 
 // A homebrew copy of any monster (SRD or homebrew), with a new index so the original is left alone.
+// A copy keeps the SRD monster's environments (for random encounters) as its own list.
 export function copyMonster(monster: Monster, edition: HomebrewEdition): HomebrewMonster {
-  return { ...structuredClone(monster), index: newIndex(), homebrew: true, edition, updatedAt: Date.now() }
+  return { ...structuredClone(monster), index: newIndex(), homebrew: true, edition, environments: environmentsOf(monster), updatedAt: Date.now() }
 }
 
 // The usage suffix shown after a trait's name, e.g. "Recharge 5–6" or "3/Day".

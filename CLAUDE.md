@@ -3,7 +3,7 @@
 ## Project
 A DnD 5e companion app for Game Masters, for personal use on a laptop. See [README.md](README.md) for the roadmap.
 
-**Stack:** React + TypeScript + Vite, React Router, Dexie (IndexedDB), TipTap (formatted notes), ESLint, Vitest. SRD rules content (2014 and 2024 editions) is bundled as JSON. Campaign data lives in IndexedDB; small preferences (edition, last search) in localStorage.
+**Stack:** React + TypeScript + Vite, React Router, Dexie (IndexedDB), TipTap (formatted notes), ESLint, Vitest. SRD rules content (2014 and 2024 editions: monsters, spells, conditions, magic items, equipment, rules) is bundled as JSON. Campaign data lives in IndexedDB; small preferences (edition, last search) in localStorage.
 
 ## Commands
 - `npm run dev`: start the dev server at http://localhost:5173
@@ -25,6 +25,7 @@ A DnD 5e companion app for Game Masters, for personal use on a laptop. See [READ
 - `src/lib/richText.ts`: formatted notes are stored as TipTap editor JSON (`RichDoc`); template, carry-over of unticked items, old plain text. `sessions.ts` for notes/plan saving and End session; `components/RichEditor.tsx` is the editor; `useAutosave.ts` the save-as-you-type hook
 - `src/lib/useCombatHistory.ts`: Undo / Redo for the combat page (`applyCombatAction` returns the state before each change; `combatHistory.ts` names changes)
 - `src/lib/resistances.ts`: reads stat block resistance text into rules, gathers a combatant's defences (stat block, PC sheet, "Resistant: Fire" conditions) and adjusts damage
+- Generators: `components/generators/` (one component per tab); logic in `lib/generators.ts` (NPCs, names, loot), `lib/worldGenerators.ts` (rumours, hooks, taverns, shops), `lib/randomEncounter.ts`; tables in `data/npcTables.ts`, `data/generatorTables.ts`, `data/environments.ts` (hand-tagged monster environments); `lib/generatorNotes.ts` turns results into session plan / notes text
 - `src/lib/conditions.ts`: condition timers (run by `combatReducer` on each turn change) and the duration form; `saves.ts` for save bonuses, rolls and damage after a save
 - `src/lib/encounters.ts`: encounter difficulty (2014 thresholds/multipliers, 2024 budgets) and loading encounters into combat
 - `src/lib/homebrew.ts`: homebrew conversions (base + per-level dice → SRD-style tables), SRD copies, checks before saving

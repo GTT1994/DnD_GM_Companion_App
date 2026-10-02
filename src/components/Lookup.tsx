@@ -3,7 +3,7 @@
 
 import type { RefObject } from 'react'
 import type { Edition, LookupCategory, LookupState } from '../types'
-import { useSrd, type MagicItem, type Monster, type Spell, type TextEntry } from '../data/srd'
+import { useSrd, type Equipment, type MagicItem, type Monster, type Spell, type TextEntry } from '../data/srd'
 import { quickRulesFor } from '../data/quickRules'
 import { formatCr } from '../lib/dice'
 import { Markdown } from './Markdown'
@@ -16,6 +16,7 @@ const CATEGORY_LABELS: Record<LookupState['category'], string> = {
   monsters: 'Monsters',
   spells: 'Spells',
   'magic-items': 'Magic Items',
+  equipment: 'Equipment',
   rules: 'Rules',
 }
 
@@ -47,6 +48,7 @@ export function Lookup({ edition, state, setState, searchRef, onAddMonster, onHo
   const monsters = useSrd(edition, 'monsters')
   const spells = useSrd(edition, 'spells')
   const items = useSrd(edition, 'magic-items')
+  const equipment = useSrd(edition, 'equipment')
   const srdRules = useSrd(edition, 'rules')
   // The hand-written quick rules come first, then the full SRD rules sections (2014 only).
   const rules = [...quickRulesFor(edition), ...(srdRules ?? [])]
@@ -57,6 +59,7 @@ export function Lookup({ edition, state, setState, searchRef, onAddMonster, onHo
     ...(monsters ?? []).map((m) => ({ category: 'monsters' as const, index: m.index, name: m.name, subtitle: `${m.homebrew ? 'Homebrew · ' : ''}CR ${formatCr(m.cr)} · ${m.meta.split(', ')[1]}` })),
     ...(spells ?? []).map((s) => ({ category: 'spells' as const, index: s.index, name: s.name, subtitle: `${s.homebrew ? 'Homebrew · ' : ''}${s.level === 0 ? 'Cantrip' : `Level ${s.level}`} · ${s.school}` })),
     ...(items ?? []).map((i) => ({ category: 'magic-items' as const, index: i.index, name: i.name, subtitle: `${i.rarity} · ${i.category}` })),
+    ...(equipment ?? []).map((e) => ({ category: 'equipment' as const, index: e.index, name: e.name, subtitle: [e.detail ?? e.category, e.cost].filter(Boolean).join(' · ') })),
     ...rules.map((r) => ({ category: 'rules' as const, index: r.index, name: r.name, subtitle: r.index.startsWith('quick-') ? 'Quick rule' : 'Rules section' })),
   ]
 
@@ -115,7 +118,7 @@ export function Lookup({ edition, state, setState, searchRef, onAddMonster, onHo
       <div className="lookup-detail">
         <Detail
           selected={state.selected}
-          data={{ conditions, monsters, spells, items, rules }}
+          data={{ conditions, monsters, spells, items, equipment, rules }}
           onAddMonster={onAddMonster}
           onHomebrew={onHomebrew}
         />
@@ -131,6 +134,7 @@ type DetailProps = {
     monsters: Monster[] | null
     spells: Spell[] | null
     items: MagicItem[] | null
+    equipment: Equipment[] | null
     rules: TextEntry[]
   }
   onAddMonster: (monster: Monster, count: number) => Promise<unknown>
@@ -170,6 +174,32 @@ function Detail({ selected, data, onAddMonster, onHomebrew }: DetailProps) {
           <h2>{item.name}</h2>
           <p className="meta">{item.category}, {item.rarity}{item.attunement ? ' (requires attunement)' : ''}</p>
           <Markdown text={item.desc} />
+        </article>
+      )
+    }
+    case 'equipment': {
+      const item = find(data.equipment)
+      if (!item) return notFound
+      // Like a stat block: the numbers that matter for this kind of item.
+      const rows: [string, string | number | undefined][] = [
+        ['Cost', item.cost],
+        ['Weight', item.weight !== undefined ? `${item.weight} lb.` : undefined],
+        ['Damage', item.damage],
+        ['Properties', item.properties?.join(', ')],
+        ['Armor Class', item.ac],
+        ['Strength', item.strength ? `Str ${item.strength} needed` : undefined],
+        ['Stealth', item.stealthDisadvantage ? 'Disadvantage' : undefined],
+      ]
+      return (
+        <article>
+          <h2>{item.name}</h2>
+          <p className="meta">{[item.category, item.detail].filter(Boolean).join(' · ')}</p>
+          <dl className="equipment-stats">
+            {rows.filter(([, value]) => value !== undefined).map(([label, value]) => (
+              <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+            ))}
+          </dl>
+          {item.desc && <Markdown text={item.desc} />}
         </article>
       )
     }

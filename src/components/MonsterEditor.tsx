@@ -13,6 +13,7 @@ import {
 import { abilityMod, formatCr, signed } from '../lib/dice'
 import { DiceField, NumberField } from './FormFields'
 import { StatBlock } from './StatBlock'
+import { ENVIRONMENT_LABELS, ENVIRONMENTS } from '../data/environments'
 
 const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
 
@@ -130,6 +131,26 @@ export function MonsterEditor({ initial, appEdition, onSave, onCancel, onDelete 
               <label key={key} className="wide">
                 {label}
                 <input value={draft[key] ?? ''} placeholder={placeholder} onChange={(e) => set(key, e.target.value || (key === 'senses' ? '' : undefined))} />
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Environments</legend>
+          <p className="meta">Where it lives, so the random encounter generator can pick it.</p>
+          <div className="environment-boxes">
+            {ENVIRONMENTS.map((env) => (
+              <label key={env} className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={draft.environments?.includes(env) ?? false}
+                  onChange={(e) => {
+                    const list = (draft.environments ?? []).filter((x) => x !== env)
+                    set('environments', e.target.checked ? [...list, env] : list.length ? list : undefined)
+                  }}
+                />
+                {ENVIRONMENT_LABELS[env]}
               </label>
             ))}
           </div>

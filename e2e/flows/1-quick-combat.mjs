@@ -77,8 +77,10 @@ export default async function ({ page, base, shot }) {
   // Generators: an NPC, and loot whose magic items open in Lookup.
   await page.goto(`${base}/generators`)
   await page.getByRole('button', { name: 'Generate NPC' }).click()
+  await page.locator('.card').first().waitFor()
+  await page.getByRole('tab', { name: 'Loot' }).click()
   await page.getByRole('button', { name: 'Generate loot' }).click()
-  await page.locator('.card').nth(1).waitFor()
+  await page.locator('.card').first().waitFor()
   const item = page.locator('.card button.link').first()
   if (await item.count()) {
     const name = await item.innerText()

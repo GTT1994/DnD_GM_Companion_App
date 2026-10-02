@@ -3,7 +3,8 @@
 
 import { db } from '../db'
 import type { Note, Session } from '../types'
-import { carryOver, normaliseNote, type RichDoc } from './richText'
+import { addUnderHeading, appendBlocks, carryOver, normaliseNote, type RichDoc } from './richText'
+import type { JSONContent } from '@tiptap/core'
 
 // A campaign's notes, with empty documents if nothing has been written yet.
 export async function getNote(campaignId: string): Promise<Note> {
@@ -49,4 +50,20 @@ export function deleteSession(id: string) {
 export function today(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Adds generated content (rumours, a tavern…) to this session's plan, under a heading.
+export function addToPlan(campaignId: string, section: string, blocks: JSONContent[]) {
+  return db.transaction('rw', db.notes, async () => {
+    const note = await getNote(campaignId)
+    await saveNote(campaignId, { plan: addUnderHeading(note.plan, section, blocks) })
+  })
+}
+
+// Adds generated content to the end of the campaign notes.
+export function addToNotes(campaignId: string, blocks: JSONContent[]) {
+  return db.transaction('rw', db.notes, async () => {
+    const note = await getNote(campaignId)
+    await saveNote(campaignId, { doc: appendBlocks(note.doc, blocks) })
+  })
 }

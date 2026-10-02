@@ -7,9 +7,9 @@ import { blankNpc } from './npcFields'
 import { resolveMonster } from './encounters'
 import { addMonstersToCombat } from './store'
 
-// Adds a blank NPC to a campaign and returns its id.
-export async function createNpc(campaignId: string): Promise<string> {
-  const npc = blankNpc(campaignId)
+// Adds an NPC to a campaign (blank, or with some fields filled in) and returns its id.
+export async function createNpc(campaignId: string, fields: Partial<Npc> = {}): Promise<string> {
+  const npc = { ...blankNpc(campaignId), ...fields }
   await db.npcs.add(npc)
   return npc.id
 }

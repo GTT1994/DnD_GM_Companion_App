@@ -54,6 +54,7 @@ export function npcFromGenerated(npc: GeneratedNpc, campaignId: string): Npc {
     campaignId,
     name: npc.name,
     species: npc.ancestry,
+    gender: npc.gender ?? '',  // generated before genders existed: blank
     role: npc.occupation,
     appearance: npc.appearance,
     personality: npc.personality,

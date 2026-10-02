@@ -49,6 +49,7 @@ export type Monster = {
   index: string
   name: string
   homebrew?: boolean     // true for the GM's own monsters
+  environments?: string[]  // homebrew only: where it lives, for random encounters (SRD ones are in data/environments.ts)
   meta: string           // size, type and alignment, e.g. "Small, humanoid, neutral evil"
   ac: number
   acNote?: string
@@ -106,6 +107,23 @@ export type MagicItem = {
   desc: string
 }
 
+// Mundane equipment with its price (for Quick Lookup and the shop generator).
+export type Equipment = {
+  index: string
+  name: string
+  category: 'Weapon' | 'Armor' | 'Adventuring Gear' | 'Tools' | 'Mounts and Vehicles' | 'Ammunition'
+  detail?: string        // e.g. "Martial Melee", "Heavy", "Artisan's Tools"
+  cost?: string          // as written, e.g. "5 sp"
+  costGp?: number        // the same in gold pieces, e.g. 0.5
+  weight?: number
+  damage?: string        // weapons, e.g. "1d8 Slashing (two-handed 1d10)"
+  properties?: string[]
+  ac?: string            // armour, e.g. "12 + Dex (max 2)"
+  strength?: number      // minimum Strength for heavy armour
+  stealthDisadvantage?: boolean
+  desc?: string
+}
+
 // Conditions and rules sections are both just a name and Markdown text.
 export type TextEntry = { index: string; name: string; desc: string }
 
@@ -115,6 +133,7 @@ export type SrdData = {
   spells: Spell
   conditions: TextEntry
   'magic-items': MagicItem
+  equipment: Equipment
   rules: TextEntry
 }
 export type Category = keyof SrdData
