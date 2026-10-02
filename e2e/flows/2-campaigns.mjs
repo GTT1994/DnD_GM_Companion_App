@@ -40,10 +40,12 @@ export default async function ({ page, base, shot, shotsDir }) {
   const npcName = await page.locator('.card h3').first().innerText()
   await page.getByRole('button', { name: 'Save to campaign' }).first().click()
   await page.getByText('Saved ✓').waitFor()
-  await page.getByRole('link', { name: 'NPCs' }).click()
-  assert.equal(await page.locator('.npc-grid h3').innerText(), npcName)
-  await page.locator('.npc-notes').fill('Met at the tavern')
-  await page.locator('h2').first().click()  // notes save when the box loses focus
+  await page.locator('.notice').getByRole('link', { name: 'Open' }).click()
+  assert.equal(await page.locator('.npc-view-header h2').innerText(), npcName)
+  await page.getByLabel('Notes', { exact: true }).fill('Met at the tavern')
+  await page.getByText('Saved', { exact: true }).waitFor()
+  await page.getByRole('link', { name: '← NPCs' }).click()
+  assert.equal(await page.locator('.npc-table .name-cell').innerText(), npcName)
 
   // Notes save as you type and survive a refresh.
   await page.getByRole('link', { name: 'Notes' }).click()

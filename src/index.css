@@ -83,8 +83,8 @@ button.primary:hover:not(:disabled) {
 
 button.danger:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
 
-/* A link styled like a button, e.g. "Go to combat". */
-a.button {
+/* A link (or a file picker label) styled like a button, e.g. "Go to combat". */
+a.button, label.button {
   display: inline-block;
   padding: 0.35em 0.7em;
   border: 1px solid var(--border);
@@ -95,7 +95,7 @@ a.button {
   white-space: nowrap;
 }
 
-a.button:hover { border-color: var(--gold); background: var(--panel-raised); }
+a.button:hover, label.button:hover { border-color: var(--gold); background: var(--panel-raised); }
 a.button.primary { background: var(--gold); border-color: var(--gold); color: #1a140b; font-weight: 600; }
 a.button.primary:hover { background: var(--gold-bright); }
 
@@ -902,13 +902,45 @@ button.roll {
 .data-table .meta { margin: 0; font-size: 0.85rem; }
 .data-table td.actions-cell { text-align: right; }
 
-.npc-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1rem;
+/* NPCs: list */
+.npc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
-.npc-notes { margin-top: 0.75rem; min-height: 5rem; }
+.npc-table .name-cell a { color: var(--gold-bright); }
+.npc-table td.portrait-cell { width: 2.5rem; padding-top: 0.25rem; padding-bottom: 0.25rem; }
+.portrait-thumb { width: 2rem; height: 2rem; object-fit: cover; border-radius: 50%; border: 1px solid var(--border); display: block; }
+.npc-table tr.npc-dead td { opacity: 0.55; }
+
+.tag.attitude-friendly { color: var(--green); border-color: var(--green); }
+.tag.attitude-hostile { color: var(--red); border-color: var(--red); }
+.tag.npc-status-dead { color: var(--red); }
+.tag.npc-status-missing { color: var(--amber); border-color: var(--amber); }
+.data-table .tag { margin-left: 0; }
+
+/* NPCs: one NPC's page */
+.npc-notes { min-height: 14rem; line-height: 1.5; width: 100%; }
+.npc-roleplay .wide { grid-column: 1 / -1; }
+.npc-basics { align-items: start; }
+
+.portrait-field { display: flex; align-items: center; gap: 1rem; }
+.portrait-field > div { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.editor-form .portrait-field label.button { display: inline-block; font-size: 0.9rem; color: var(--text); cursor: pointer; }
+.portrait { width: 7rem; height: 7rem; object-fit: cover; border-radius: 8px; border: 1px solid var(--gold); }
+
+.npc-stat-block { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.npc-stat-block strong { color: var(--gold-bright); }
+
+.npc-view-header { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 0.75rem; }
+.npc-view-header h2 { margin: 0 0 0.2rem; }
+.npc-view-header p { margin: 0.2rem 0; }
+.npc-view .tag { margin: 0 0.4rem 0 0; }
+.npc-roleplay-list { padding-left: 1.2em; }
+.npc-roleplay-list strong { color: var(--gold); }
 
 textarea.notes { min-height: 60vh; line-height: 1.6; }
 

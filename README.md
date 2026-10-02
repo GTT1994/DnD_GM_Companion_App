@@ -7,12 +7,18 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 ## Features
 
 **Home page and campaigns**
-- Create campaigns, each with its own party, fight, saved NPCs and notes
+- Create campaigns, each with its own party, fight, NPCs, encounters and notes
 - **Quick combat** for one-off fights outside any campaign (remembered until you clear it)
 - Party table with AC, HP and passive Perception / Insight / Investigation, class, level and player
 - PC HP carries over between fights until you heal them or take a **Long rest**
 - **Add party** puts every PC into the campaign's fight at their current HP
 - Export a campaign (or everything) to a backup file, and import it again, e.g. on another computer
+
+**NPCs** (inside each campaign)
+- Write your own NPCs or save generated ones: name, species (list or custom), gender, role, location, faction, attitude (Friendly / Indifferent / Hostile) and status (Alive / Dead / Missing / Unknown)
+- Roleplay prompts (appearance, personality, voice, motivation, secret), a portrait image and Markdown notes, shown formatted beside the form; everything saves as you type
+- Give an NPC a stat block (SRD or homebrew) and **Add to combat** puts them in the fight under their own name, with that monster's actions
+- Searchable table with attitude and status filters
 
 **Encounters** (inside each campaign)
 - Prepare fights in advance: monsters (SRD or homebrew) with quantities, notes, and Planned / Used status
@@ -75,13 +81,16 @@ Homebrew monsters and spells with editors, SRD copies, edition tags and export/i
 ### Encounters ✅
 Prepared encounters with difficulty for the party, loaded into combat with group initiative and optional rolled HP.
 
+### NPCs ✅
+Custom NPCs with species, gender, role, location, faction, attitude, status, portrait, Markdown notes and a stat block for combat.
+
 ### v0.2: Quality of life
 - Condition durations
 - Saving throw buttons for monsters
 
 ### Later: All-in-one toolkit
 - Session prep: scenes, secrets and clues, planned encounters
-- Campaign wiki: NPCs, locations, factions and items, all linked to each other
+- Campaign wiki: locations, factions and items, linked to each other and to NPCs
 - Session log and recaps
 - More generators: random encounters, taverns and shops, weather, rumours
 - Optional: sync between devices, a second-screen view for players
@@ -125,6 +134,7 @@ npm run srd    # re-download the SRD data into src/data/srd/
 - **Legendary actions** default to 3 per round, because the data doesn't record the number; change it per monster with − / + in the actions panel.
 - **Spells without damage data** (e.g. Hold Person, Counterspell) show their text only in the actions panel; there's nothing to roll.
 - **Extra damage tick boxes** use a text rule to guess whether an extra damage part is conditional (e.g. "if the attack roll had Advantage"). Check the ticks on unusual monsters.
+- **NPC portraits** are shrunk to 256 px and stored in the database, so each one adds roughly 10–30 KB to a backup file.
 - **Data lives in this browser only.** Clearing site data deletes it, so use **Export all** on the home page for backups.
 
 ## Legal

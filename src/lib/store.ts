@@ -58,14 +58,15 @@ export function applyCombatAction(combatId: string, action: CombatAction) {
 }
 
 // Adds SRD monsters to a combat, each rolling its own initiative (d20 + Dex modifier).
-export function addMonstersToCombat(combatId: string, monster: Monster, count: number, edition: Edition) {
+// Pass a name to use instead of the monster's (e.g. an NPC fighting with a Bandit Captain's stat block).
+export function addMonstersToCombat(combatId: string, monster: Monster, count: number, edition: Edition, name = monster.name) {
   return db.transaction('rw', [db.combats, db.pcs], async () => {
     const existing = (await getCombat(combatId)).combatants
     const added: Combatant[] = []
     for (let i = 0; i < count; i++) {
       added.push({
         id: crypto.randomUUID(),
-        name: uniqueName(monster.name, [...existing, ...added]),
+        name: uniqueName(name, [...existing, ...added]),
         initiative: rollDie(20) + abilityMod(monster.abilities[1]),
         hp: monster.hp,
         maxHp: monster.hp,

@@ -104,7 +104,7 @@ export function encounterSummary(encounter: Encounter): string {
 }
 
 // Finds the full monster for an encounter entry: homebrew from the database, SRD from the rules files.
-export async function resolveMonster(ref: EncounterMonster): Promise<Monster | undefined> {
+export async function resolveMonster(ref: Pick<EncounterMonster, 'edition' | 'index'>): Promise<Monster | undefined> {
   if (ref.index.startsWith('hb-')) return db.homebrewMonsters.get(ref.index)
   return (await loadSrd(ref.edition, 'monsters')).find((m) => m.index === ref.index)
 }

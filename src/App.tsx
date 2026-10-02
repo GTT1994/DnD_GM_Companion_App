@@ -15,7 +15,7 @@ import { Overview } from './pages/Overview'
 import { CombatPage } from './pages/CombatPage'
 import { LookupPage } from './pages/LookupPage'
 import { GeneratorsPage } from './pages/GeneratorsPage'
-import { NpcsPage } from './pages/NpcsPage'
+import { NpcPage, NpcsPage } from './pages/NpcsPage'
 import { NotesPage } from './pages/NotesPage'
 import { HomebrewPage } from './pages/HomebrewPage'
 import { EncounterEditorPage, EncountersPage } from './pages/EncountersPage'
@@ -51,6 +51,7 @@ function App() {
               <Route path="encounters" element={<EncountersPage />} />
               <Route path="encounters/:encounterId" element={<EncounterEditorPage />} />
               <Route path="npcs" element={<NpcsPage />} />
+              <Route path="npcs/:npcId" element={<NpcPage />} />
               <Route path="notes" element={<NotesPage />} />
               <Route path="lookup" element={<LookupPage />} />
               <Route path="generators" element={<GeneratorsPage />} />

@@ -21,6 +21,7 @@ A DnD 5e companion app for Game Masters, for personal use on a laptop. See [READ
 - `src/lib/store.ts`: all database writes go through here (PC HP carry-over, cascade delete, migration); `backup.ts` for export/import
 - `src/lib/`: other logic with no UI (dice, combat rules, generators), with `*.test.ts` files next to it. Database tests use `fake-indexeddb`
 - `src/data/`: SRD data loader (`useSrd` merges in homebrew monsters/spells for the edition), the generated JSON (`srd/<edition>/`), and hand-written tables (quick rules, NPC names)
+- `src/lib/npcFields.ts`: NPC defaults (also used by the version 4 upgrade and old backups), generated → saved NPCs, search; `npcs.ts` for NPC writes, adding to combat and portrait resizing
 - `src/lib/encounters.ts`: encounter difficulty (2014 thresholds/multipliers, 2024 budgets) and loading encounters into combat
 - `src/lib/homebrew.ts`: homebrew conversions (base + per-level dice → SRD-style tables), SRD copies, checks before saving
 - `scripts/build-srd.mjs`: downloads the SRD data from 5e-bits/5e-database and trims it to what the app uses

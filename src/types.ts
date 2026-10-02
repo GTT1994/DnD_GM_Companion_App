@@ -100,3 +100,31 @@ export type Encounter = {
   monsters: EncounterMonster[]
   updatedAt: number
 }
+
+// How an NPC feels about the party (the 5e social interaction attitudes).
+export type NpcAttitude = 'friendly' | 'indifferent' | 'hostile'
+export type NpcStatus = 'alive' | 'dead' | 'missing' | 'unknown'
+
+// A non-player character in a campaign: written by the GM or saved from the generator.
+export type Npc = {
+  id: string
+  campaignId: string
+  name: string
+  species: string
+  gender: string
+  role: string          // occupation, e.g. "Innkeeper"
+  location: string      // where the party can find them
+  faction: string
+  attitude: NpcAttitude
+  status: NpcStatus
+  appearance: string
+  personality: string
+  mannerism: string     // voice or mannerism
+  motivation: string
+  secret: string
+  notes: string         // Markdown
+  portrait?: string     // a small image, stored as a data URL ("data:image/jpeg;base64,...")
+  statBlock?: { edition: Edition; index: string; name: string }  // the monster they fight as
+  savedAt: number       // when they were added
+  updatedAt: number
+}

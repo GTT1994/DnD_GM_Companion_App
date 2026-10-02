@@ -3,6 +3,7 @@
 
 import { db, QUICK_COMBAT, type HomebrewMonster, type HomebrewSpell, type SavedCombat, type SavedNpc } from '../db'
 import type { Campaign, Encounter, Note, Pc } from '../types'
+import { normaliseNpc } from './npcFields'
 
 const APP = 'gm-companion'
 const VERSION = 1
@@ -46,9 +47,9 @@ export async function exportCampaigns(ids?: string[]): Promise<Backup> {
   if (!ids) {
     backup.homebrew = await homebrewEntries()
   } else {
-    // Homebrew monsters in the campaign's fight or its encounters.
+    // Homebrew monsters in the campaign's fight, its encounters, or used as NPC stat blocks.
     const monsterIndexes = entries
-      .flatMap((e) => [...(e.combat?.combatants.map((c) => c.monster?.index) ?? []), ...(e.encounters ?? []).flatMap((enc) => enc.monsters.map((m) => m.index))])
+      .flatMap((e) => [...(e.combat?.combatants.map((c) => c.monster?.index) ?? []), ...(e.encounters ?? []).flatMap((enc) => enc.monsters.map((m) => m.index)), ...e.npcs.map((n) => n.statBlock?.index)])
       .filter((i) => i?.startsWith('hb-'))
     const monsters = (await db.homebrewMonsters.bulkGet(monsterIndexes as string[])).filter((m) => m !== undefined)
     const spellIndexes = monsters.flatMap((m) => spellIndexesOf(m)).filter((i) => i.startsWith('hb-'))
@@ -132,7 +133,12 @@ export async function importCampaigns(data: unknown): Promise<ImportResult> {
 
       await db.campaigns.add({ ...entry.campaign, id: campaignId, lastOpenedAt: Date.now() })
       await db.pcs.bulkAdd(entry.pcs.map((pc) => ({ ...pc, id: pcIds.get(pc.id)!, campaignId })))
-      await db.npcs.bulkAdd(entry.npcs.map((npc) => ({ ...npc, id: crypto.randomUUID(), campaignId })))
+      // Older backups have NPCs without the newer fields; their stat blocks point at the imported homebrew copies.
+      await db.npcs.bulkAdd(entry.npcs.map((old) => {
+        const npc = normaliseNpc(old)
+        const statBlock = npc.statBlock && { ...npc.statBlock, index: monsterIds.get(npc.statBlock.index) ?? npc.statBlock.index }
+        return { ...npc, id: crypto.randomUUID(), campaignId, ...(statBlock ? { statBlock } : {}) }
+      }))
       if (entry.notes) await db.notes.add({ ...entry.notes, campaignId })
       await db.encounters.bulkAdd((entry.encounters ?? []).map((enc) => ({
         ...enc,

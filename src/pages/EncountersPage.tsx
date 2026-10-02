@@ -6,7 +6,6 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { Encounter, EncounterMonster, Pc } from '../types'
-import { useSrd } from '../data/srd'
 import { useApp, useCampaignRoute } from '../lib/appContext'
 import { formatCr } from '../lib/dice'
 import {
@@ -14,6 +13,7 @@ import {
 } from '../lib/encounters'
 import { addPartyToCombat, getCombat } from '../lib/store'
 import { DifficultyPanel } from '../components/DifficultyPanel'
+import { MonsterPicker } from '../components/MonsterPicker'
 
 export function EncountersPage() {
   const { campaignId, base } = useCampaignRoute()
@@ -214,39 +214,6 @@ function EncounterEditor({ initial, party }: { initial: Encounter; party: Pc[] }
         </div>
       </div>
     </section>
-  )
-}
-
-// Search box for adding SRD and homebrew monsters (current edition) to the encounter.
-function MonsterPicker({ onAdd }: { onAdd: (ref: EncounterMonster) => void }) {
-  const { edition } = useApp()
-  const monsters = useSrd(edition, 'monsters')
-  const [query, setQuery] = useState('')
-  const text = query.trim().toLowerCase()
-  // Best matches first: names starting with the search, then the rest.
-  const results = text
-    ? (monsters ?? [])
-        .filter((m) => m.name.toLowerCase().includes(text))
-        .sort((a, b) => Number(!a.name.toLowerCase().startsWith(text)) - Number(!b.name.toLowerCase().startsWith(text)))
-        .slice(0, 8)
-    : []
-
-  return (
-    <div className="monster-picker">
-      <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Add a monster (${edition})…`} />
-      {results.length > 0 && (
-        <ul className="results">
-          {results.map((m) => (
-            <li key={m.index}>
-              <button type="button" onClick={() => onAdd({ edition, index: m.index, name: m.name, count: 1, xp: m.xp, cr: m.cr })}>
-                <span className="result-name">{m.name}</span>
-                <span className="result-subtitle">{m.homebrew ? 'Homebrew · ' : ''}CR {formatCr(m.cr)} · {m.xp.toLocaleString()} XP</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
   )
 }
 

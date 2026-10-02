@@ -2,6 +2,7 @@
 // are saved, so they're still there after a refresh.
 
 import { useState } from 'react'
+import { Link } from 'react-router'
 import type { Edition } from '../types'
 import { useSrd } from '../data/srd'
 import { ancestries, type Ancestry } from '../data/npcTables'
@@ -14,6 +15,7 @@ const HISTORY = 8  // how many past results to keep
 type SaveNpcProps = {
   onSaveNpc?: (npc: Npc) => void
   isNpcSaved?: (npc: Npc) => boolean
+  savedNpcLink?: (npc: Npc) => string  // the saved NPC's page, to fill in more details
 }
 
 type GeneratorsProps = SaveNpcProps & {
@@ -21,16 +23,16 @@ type GeneratorsProps = SaveNpcProps & {
   onOpenItem: (index: string) => void  // opens a magic item in Quick Lookup
 }
 
-export function Generators({ edition, onOpenItem, onSaveNpc, isNpcSaved }: GeneratorsProps) {
+export function Generators({ edition, onOpenItem, onSaveNpc, isNpcSaved, savedNpcLink }: GeneratorsProps) {
   return (
     <section className="page generators">
-      <NpcGenerator onSaveNpc={onSaveNpc} isNpcSaved={isNpcSaved} />
+      <NpcGenerator onSaveNpc={onSaveNpc} isNpcSaved={isNpcSaved} savedNpcLink={savedNpcLink} />
       <LootGenerator edition={edition} onOpenItem={onOpenItem} />
     </section>
   )
 }
 
-function NpcGenerator({ onSaveNpc, isNpcSaved }: SaveNpcProps) {
+function NpcGenerator({ onSaveNpc, isNpcSaved, savedNpcLink }: SaveNpcProps) {
   const [ancestry, setAncestry] = useState<Ancestry | ''>('')  // '' = any
   const [npcs, setNpcs] = useSavedState<Npc[]>('npcs', [])
 
@@ -53,7 +55,7 @@ function NpcGenerator({ onSaveNpc, isNpcSaved }: SaveNpcProps) {
           {onSaveNpc && (
             <div className="card-actions">
               {isNpcSaved?.(npc)
-                ? <span className="notice">Saved ✓</span>
+                ? <span className="notice">Saved ✓ {savedNpcLink && <Link to={savedNpcLink(npc)}>Open</Link>}</span>
                 : <button type="button" onClick={() => onSaveNpc(npc)}>Save to campaign</button>}
             </div>
           )}

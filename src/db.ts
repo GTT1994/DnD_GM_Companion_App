@@ -3,15 +3,15 @@
 // first, then any indexed columns (other columns don't need declaring).
 
 import Dexie, { type Table } from 'dexie'
-import type { Campaign, CombatState, Edition, Encounter, Note, Pc } from './types'
-import type { Npc } from './lib/generators'
+import type { Campaign, CombatState, Edition, Encounter, Note, Npc, Pc } from './types'
 import type { Monster, Spell } from './data/srd'
+import { normaliseNpc } from './lib/npcFields'
 
 // A combat saved in the database. Its id is the campaign's id, or 'quick' for Quick combat.
 export type SavedCombat = CombatState & { id: string }
 
-// A generated NPC that has been saved to a campaign, with the GM's own notes.
-export type SavedNpc = Npc & { campaignId: string; notes: string; savedAt: number }
+// A campaign's NPC (see Npc in types.ts).
+export type SavedNpc = Npc
 
 // Which rules edition a homebrew entry shows up in.
 export type HomebrewEdition = Edition | 'both'
@@ -62,6 +62,15 @@ class GmDatabase extends Dexie {
     this.version(3).stores({
       encounters: 'id, campaignId',
     })
+    // Version 4 adds the custom NPC fields. NPCs saved from the generator get them filled in
+    // (ancestry becomes species, occupation becomes role), like an UPDATE run during the upgrade.
+    this.version(4).stores({
+      npcs: 'id, campaignId',
+    }).upgrade((tx) => tx.table('npcs').toCollection().modify((npc) => {
+      Object.assign(npc, normaliseNpc(npc))
+      delete npc.ancestry
+      delete npc.occupation
+    }))
   }
 }
 
