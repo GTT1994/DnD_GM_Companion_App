@@ -155,8 +155,8 @@ export function CombatantRow({ combatant: c, isActive, isSelected, conditionName
         )}
         {showTypes && hasNonmagicalRules(defenses) && (
           <label className="checkbox magical" title="Magical attack: ignores resistances to nonmagical attacks">
-            <input type="checkbox" checked={magical} onChange={(e) => setMagical(e.target.checked)} />
-            Magical
+            <input type="checkbox" checked={magical} onChange={(e) => setMagical(e.target.checked)} aria-label="Magical" />
+            <span className="magical-text">Magical</span>
           </label>
         )}
         <button type="button" className="damage" onClick={() => applyAmount('damage')} title="Take damage (temp HP first)">

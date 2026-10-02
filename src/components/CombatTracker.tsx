@@ -1,6 +1,8 @@
 // The combat tracker page: turn order, round counter, HP and conditions for everyone in the fight.
+// The toolbar stays full width at the top; selecting a monster narrows the table to the left and
+// slides its actions panel in on the right.
 
-import { useState, type Dispatch } from 'react'
+import { useEffect, useRef, useState, type Dispatch } from 'react'
 import type { CombatState, Combatant, Edition } from '../types'
 import { sortByInitiative, uniqueName, type CombatAction } from '../lib/combat'
 import { useMonsterLookup, useSrd } from '../data/srd'
@@ -14,6 +16,8 @@ import { TurnAlerts } from './TurnAlerts'
 import { InitiativePrompt } from './InitiativePrompt'
 import { MoreMenu } from './MoreMenu'
 import type { GroupSavePreset } from '../lib/saves'
+
+const PANEL_ANIMATION_MS = 250  // how long the panel takes to slide in or out (matches the CSS)
 
 // Not an official condition, but GMs track it like one.
 const EXTRA_CONDITIONS = ['Concentrating']
@@ -47,6 +51,27 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
   const selectedId = pick.atTurn === combat.activeId ? pick.id : (activeMonsterId ?? pick.id)
   const select = (id: string | null) => setPick({ id, atTurn: combat.activeId })
   const selected = order.find((c) => c.id === selectedId)
+
+  // While the panel slides closed it keeps showing the last monster, then empties.
+  const [shownId, setShownId] = useState(selectedId)
+  if (selectedId && selectedId !== shownId) setShownId(selectedId)  // a new pick shows straight away
+  useEffect(() => {
+    if (selectedId || !shownId) return
+    const timer = setTimeout(() => setShownId(null), PANEL_ANIMATION_MS)
+    return () => clearTimeout(timer)
+  }, [selectedId, shownId])
+  const shown = order.find((c) => c.id === (selectedId ?? shownId))
+
+  // The sticky panel sits just under the sticky toolbar, whose height changes if its buttons wrap.
+  const pageRef = useRef<HTMLElement>(null)
+  const toolbarRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const toolbar = toolbarRef.current
+    if (!toolbar) return
+    const observer = new ResizeObserver(() => pageRef.current?.style.setProperty('--toolbar-height', `${toolbar.offsetHeight}px`))
+    observer.observe(toolbar)
+    return () => observer.disconnect()
+  }, [])
   // The group save form, when open (from the toolbar, or pre-filled from a monster's action or spell).
   const [groupSave, setGroupSave] = useState<{ key: string; preset: GroupSavePreset } | null>(null)
   const openGroupSave = (preset: GroupSavePreset) => setGroupSave({ key: crypto.randomUUID(), preset })
@@ -71,8 +96,9 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
   }
 
   return (
-    <section className={`page combat-layout ${selected ? 'with-panel' : ''}`}>
-      <div className="combat-main">
+    <section className="page combat-page" ref={pageRef}>
+      {/* Full width and sticky, so the buttons stay put when the panel opens or the page scrolls */}
+      <div className="combat-top" ref={toolbarRef}>
         <div className="toolbar">
           <div className="round">
             {combat.round === 0 ? 'Not started' : <>Round <strong>{combat.round}</strong>{active && <> · {active.name}'s turn</>}</>}
@@ -106,84 +132,92 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
             />
           </div>
         </div>
-
-        {adding && (
-          <AddCombatantForm
-            // In a campaign the party is added with "Add party", so the form is mostly for monsters.
-            defaultIsPlayer={!onAddParty}
-            lookupHref={`${base}/lookup`}
-            onClose={() => setAddChoice(false)}
-            // Number duplicate names, e.g. a second "Bandit" becomes "Bandit 2".
-            onAdd={(c) => dispatch({ type: 'add', combatants: [{ ...c, name: uniqueName(c.name, combat.combatants) }] })}
-          />
-        )}
-
-        {askingInitiative && combat.round === 0 && (
-          <InitiativePrompt players={players} onStart={startWith} onClose={() => setAskingInitiative(false)} />
-        )}
-        <TurnAlerts combat={combat} dispatch={dispatch} />
-        {groupSave && (
-          <GroupSave
-            key={groupSave.key}  // a new preset starts a fresh form
-            preset={groupSave.preset}
-            combat={combat}
-            conditionNames={conditionNames}
-            dispatch={dispatch}
-            onClose={() => setGroupSave(null)}
-          />
-        )}
-
-        {order.length === 0 ? (
-          <p className="empty">
-            No one in the fight yet. {onAddParty ? <>Use <strong>Add party</strong>, <strong>+ Add combatant</strong></> : <>Use <strong>+ Add combatant</strong></>}, or add monsters from their stat block in <strong>Quick Lookup</strong> (⌘K).
-          </p>
-        ) : (
-          <table className="tracker">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Init</th>
-                <th>Name</th>
-                <th>AC</th>
-                <th>HP</th>
-                <th>Conditions</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* One row per combatant, highest initiative first */}
-              {order.map((c) => (
-                <CombatantRow
-                  key={c.id}
-                  combatant={c}
-                  isActive={c.id === combat.activeId}
-                  conditionNames={conditionNames}
-                  conditionHelp={conditionHelp}
-                  combatants={order}
-                  activeId={combat.activeId}
-                  defenses={defensesOf(c)}
-                  dispatch={dispatch}
-                  isSelected={c.id === selectedId}
-                  onSelect={() => select(c.id === selectedId ? null : c.id)}
-                />
-              ))}
-            </tbody>
-          </table>
-        )}
       </div>
 
-      {selected && (
-        <MonsterPanel
-          key={selected.id}  // start fresh (rolls, advantage) when switching monsters
-          combatant={selected}
-          combat={combat}
-          dispatch={dispatch}
-          onClose={() => select(null)}
-          onGroupSave={openGroupSave}
-          defensesOf={defensesOf}
-          onOpenStatBlock={() => selected.monster && onOpenMonster(selected.monster.edition, selected.monster.index)}
+      {adding && (
+        <AddCombatantForm
+          // In a campaign the party is added with "Add party", so the form is mostly for monsters.
+          defaultIsPlayer={!onAddParty}
+          lookupHref={`${base}/lookup`}
+          onClose={() => setAddChoice(false)}
+          // Number duplicate names, e.g. a second "Bandit" becomes "Bandit 2".
+          onAdd={(c) => dispatch({ type: 'add', combatants: [{ ...c, name: uniqueName(c.name, combat.combatants) }] })}
         />
       )}
+
+      {askingInitiative && combat.round === 0 && (
+        <InitiativePrompt players={players} onStart={startWith} onClose={() => setAskingInitiative(false)} />
+      )}
+      <TurnAlerts combat={combat} dispatch={dispatch} />
+      {groupSave && (
+        <GroupSave
+          key={groupSave.key}  // a new preset starts a fresh form
+          preset={groupSave.preset}
+          combat={combat}
+          conditionNames={conditionNames}
+          dispatch={dispatch}
+          onClose={() => setGroupSave(null)}
+        />
+      )}
+
+      {/* The combatants, and the actions panel beside them when a monster is selected */}
+      <div className={`combat-split ${selected ? 'with-panel' : ''}`}>
+        <div className="combat-main">
+          {order.length === 0 ? (
+            <p className="empty">
+              No one in the fight yet. {onAddParty ? <>Use <strong>Add party</strong>, <strong>+ Add combatant</strong></> : <>Use <strong>+ Add combatant</strong></>}, or add monsters from their stat block in <strong>Quick Lookup</strong> (⌘K).
+            </p>
+          ) : (
+            <table className="tracker">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Init</th>
+                  <th>Name</th>
+                  <th>AC</th>
+                  <th>HP</th>
+                  <th>Conditions</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* One row per combatant, highest initiative first */}
+                {order.map((c) => (
+                  <CombatantRow
+                    key={c.id}
+                    combatant={c}
+                    isActive={c.id === combat.activeId}
+                    conditionNames={conditionNames}
+                    conditionHelp={conditionHelp}
+                    combatants={order}
+                    activeId={combat.activeId}
+                    defenses={defensesOf(c)}
+                    dispatch={dispatch}
+                    isSelected={c.id === selectedId}
+                    onSelect={() => select(c.id === selectedId ? null : c.id)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Stays in place while open; slides in and out. Shows the last monster while closing. */}
+        <div className="panel-slot">
+          {shown && (
+            <MonsterPanel
+              key={shown.id}  // start fresh (rolls, advantage) when switching monsters
+              combatant={shown}
+              combat={combat}
+              dispatch={dispatch}
+              onClose={() => select(null)}
+              onGroupSave={openGroupSave}
+              defensesOf={defensesOf}
+              onOpenStatBlock={() => shown.monster && onOpenMonster(shown.monster.edition, shown.monster.index)}
+            />
+          )}
+        </div>
+      </div>
     </section>
   )
 }

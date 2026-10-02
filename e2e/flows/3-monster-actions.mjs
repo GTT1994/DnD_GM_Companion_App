@@ -1,4 +1,4 @@
-// The monster actions panel: to hit with advantage, critical hits, damage tick boxes, applying
+// The monster actions panel: opening beside the table without moving the toolbar, to hit with advantage, critical hits, damage tick boxes, applying
 // damage, recharge, legendary actions, spell slots and upcasting, concentration, the quick roller,
 // and the panel following the turn.
 
@@ -17,6 +17,24 @@ export default async function ({ page, base, shot }) {
   const panel = page.locator('.monster-panel')
   const card = (name) => panel.locator('.action-card', { has: page.locator('.action-title strong', { hasText: name }) }).first()
   const open = (name) => page.locator('tr.combatant', { hasText: name }).locator('button.link').click()
+
+  // The toolbar buttons stay exactly where they are when the panel opens (and closes).
+  const toolbarBoxes = () => page.locator('.combat-top .toolbar-buttons > *').evaluateAll((els) => els.map((e) => {
+    const r = e.getBoundingClientRect()
+    return `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.width)}`
+  }))
+  const before = await toolbarBoxes()
+  await open('Bandit')
+  await panel.locator('h2', { hasText: 'Bandit' }).waitFor()
+  await page.waitForTimeout(300)  // let the slide-in finish
+  assert.deepEqual(await toolbarBoxes(), before, 'toolbar buttons should not move when the panel opens')
+  const split = await page.locator('.combat-main').boundingBox()
+  const side = await panel.boundingBox()
+  assert.ok(side.x > split.x + split.width, 'panel is to the right of the table')
+  assert.ok(Math.abs(split.width / (split.width + side.width) - 0.6) < 0.05, 'about 60 / 40')
+  await panel.getByRole('button', { name: 'Close panel' }).click()
+  await panel.waitFor({ state: 'detached' })  // after sliding out
+  assert.deepEqual(await toolbarBoxes(), before, 'or when it closes')
 
   // Goblin Boss: conditional extra damage starts unticked; a natural 20 doubles the dice.
   await open('Goblin Boss')

@@ -40,7 +40,7 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - **Start combat** asks for each player's initiative roll (or rolls a d20 for them); monsters roll their own
 - **Undo / Redo** (⌘Z / ⇧⌘Z) for the last 20 changes, named on hover, e.g. "Undo: 8 damage to Thorin". PC HP on the party cards follows
 - Edit initiative inline. Under **More ▾**: End combat, **Reset combat** (run the same fight again: full HP, no conditions, spell slots and uses back), Clear NPCs (keeps the party for the next fight) and Clear all
-- Click a monster's name for its **actions panel** (it also opens automatically on the monster's turn):
+- The toolbar stays put at the top of the screen. Click a monster's name and the table narrows to the left while its **actions panel** slides in on the right (it also opens automatically on the monster's turn):
   - **To hit** (with advantage/disadvantage) and **Damage** buttons for every attack; a natural 20 doubles the damage dice
   - Tick boxes for extra or conditional damage, saving throw DCs, and **Apply** / **Apply half** to a target
   - **Saving throw** buttons for all six abilities (with proficiencies), and **Group save** on breath weapons and save spells, filled in for you
