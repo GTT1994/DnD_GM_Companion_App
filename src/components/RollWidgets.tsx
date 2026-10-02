@@ -8,6 +8,7 @@ import type { CombatAction } from '../lib/combat'
 import { rollToHit, type D20Mode } from '../lib/actions'
 import { rollDice, signed } from '../lib/dice'
 import type { GroupSavePreset } from '../lib/saves'
+import { adjustmentLabel, adjustParts, type Adjusted, type Defense, type Defenses } from '../lib/resistances'
 
 // What every roll widget needs to know about the fight.
 export type RollContext = {
@@ -17,6 +18,7 @@ export type RollContext = {
   dispatch: Dispatch<CombatAction>
   log: (text: string) => void        // adds a line to the roll history
   openGroupSave: (preset: GroupSavePreset) => void  // opens the group save form, filled in
+  defensesOf: (c: Combatant) => Defenses            // a target's resistances, immunities and vulnerabilities
 }
 
 type ToHitProps = {
@@ -117,22 +119,30 @@ export function DamageRoller({ label, parts, initialIncluded, crit, onUsedCrit, 
           </span>
         )}
       </div>
-      {result && <ApplyToTarget amount={result.total} allowHalf={allowHalf} heal={heal} ctx={ctx} />}
+      {result && <ApplyToTarget parts={result.parts.map((r) => ({ total: r.total, type: r.part.type }))} allowHalf={allowHalf} heal={heal} ctx={ctx} />}
     </div>
   )
 }
 
-// "Apply to [target]" for a damage or healing result.
-function ApplyToTarget({ amount, allowHalf, heal, ctx }: { amount: number; allowHalf?: boolean; heal?: boolean; ctx: RollContext }) {
+// "Apply to [target]" for a damage or healing result. Damage is adjusted for the target's
+// resistances, immunities and vulnerabilities, part by part (e.g. slashing + fire).
+function ApplyToTarget({ parts, allowHalf, heal, ctx }: { parts: { total: number; type?: string }[]; allowHalf?: boolean; heal?: boolean; ctx: RollContext }) {
   // Healing usually targets the caster's side, damage the other side; start with a sensible choice.
   const [targetId, setTargetId] = useState(heal ? ctx.self.id : (ctx.targets.find((t) => t.isPlayer)?.id ?? ''))
   const everyone = heal ? [ctx.self, ...ctx.targets] : ctx.targets
   const target = everyone.find((t) => t.id === targetId)
+  const total = parts.reduce((sum, p) => sum + p.total, 0)
+  const defenses = target && !heal ? ctx.defensesOf(target) : undefined
+  const singleType = parts.length === 1 ? parts[0].type : undefined
+  const unadjusted = (amount: number): Adjusted => ({ amount, kinds: new Set<Defense>() })
+  const full = defenses ? adjustParts(parts, defenses) : unadjusted(total)
+  const half = defenses ? adjustParts(parts, defenses, { half: true }) : unadjusted(Math.floor(total / 2))
+  const note = (r: Adjusted) => (r.kinds.size ? ` (${adjustmentLabel(r.kinds, singleType)})` : '')
 
-  function apply(value: number) {
+  function apply(r: Adjusted) {
     if (!target) return
-    ctx.dispatch({ type: heal ? 'heal' : 'damage', id: target.id, amount: value })
-    ctx.log(`${heal ? 'Healed' : 'Applied'} ${value}${heal ? '' : ' damage'} to ${target.name}`)
+    ctx.dispatch({ type: heal ? 'heal' : 'damage', id: target.id, amount: heal ? total : r.amount })
+    ctx.log(heal ? `Healed ${total} to ${target.name}` : `Applied ${r.amount} damage to ${target.name}${note(r)}`)
   }
 
   return (
@@ -141,8 +151,8 @@ function ApplyToTarget({ amount, allowHalf, heal, ctx }: { amount: number; allow
         <option value="">Choose target…</option>
         {everyone.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.hp}/{t.maxHp})</option>)}
       </select>
-      <button type="button" disabled={!target} onClick={() => apply(amount)}>{heal ? 'Heal' : 'Apply'} {amount}</button>
-      {allowHalf && !heal && <button type="button" disabled={!target} onClick={() => apply(Math.floor(amount / 2))}>Half ({Math.floor(amount / 2)})</button>}
+      <button type="button" disabled={!target} onClick={() => apply(full)}>{heal ? `Heal ${total}` : `Apply ${full.amount}${note(full)}`}</button>
+      {allowHalf && !heal && <button type="button" disabled={!target} onClick={() => apply(half)}>Half ({half.amount}{note(half)})</button>}
     </div>
   )
 }

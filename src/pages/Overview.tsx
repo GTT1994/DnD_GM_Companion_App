@@ -14,6 +14,7 @@ import { difficulty, encounterSummary } from '../lib/encounters'
 import { carryOver, emptyDoc, isEmptyDoc, sessionTemplate, type RichDoc } from '../lib/richText'
 import { endSession, getNote, nextSessionNumber, saveNote, today } from '../lib/sessions'
 import { useAutosave } from '../lib/useAutosave'
+import { defenseTags, fromPcDefenses } from '../lib/resistances'
 import { PcForm } from '../components/PcForm'
 import { RichEditor } from '../components/RichEditor'
 import { LoadIntoCombat } from '../components/LoadIntoCombat'
@@ -223,6 +224,9 @@ function Party({ campaign, party, onEdit }: { campaign: Campaign; party: Pc[]; o
                 <strong className="pc-name">{pc.name}</strong>
                 <span className="meta"> {pc.className ? `${pc.className} ${pc.level}` : `Level ${pc.level}`}</span>
                 {pc.playerName && <div className="meta">played by {pc.playerName}</div>}
+                {defenseTags(fromPcDefenses(pc.defenses)).map((t) => (
+                  <span key={t.kind} className={`tag defense-tag ${t.kind}`} title={t.title}>{t.text}</span>
+                ))}
               </div>
               <div className="pc-card-buttons">
                 <button type="button" className="small" onClick={() => onEdit(pc.id)}>Edit</button>

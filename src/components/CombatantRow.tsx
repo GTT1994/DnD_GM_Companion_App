@@ -1,10 +1,15 @@
 // Displays one combatant as a row in the combat tracker table, with controls for
-// initiative, HP, conditions and removing them.
+// initiative, HP, conditions and removing them. Creatures with damage resistances, immunities or
+// vulnerabilities show them as tags, and get a damage type picker so typed-in damage is adjusted.
 
 import { useState, type Dispatch } from 'react'
 import type { Combatant } from '../types'
 import type { CombatAction } from '../lib/combat'
 import { timerLabel } from '../lib/conditions'
+import { DAMAGE_TYPES } from '../lib/homebrew'
+import {
+  adjustDamage, adjustmentLabel, defenseTags, hasDamageDefenses, hasNonmagicalRules, type Defenses,
+} from '../lib/resistances'
 import { ConditionPicker } from './ConditionPicker'
 
 type CombatantRowProps = {
@@ -15,20 +20,38 @@ type CombatantRowProps = {
   conditionHelp: Record<string, string> // short description of each condition, shown on hover
   combatants: Combatant[]               // everyone in the fight, in turn order (for durations)
   activeId: string | null
+  defenses: Defenses                    // damage resistances etc. and condition immunities
   dispatch: Dispatch<CombatAction>      // sends changes to the tracker
   onSelect: () => void                  // opens the actions panel (monsters only)
 }
 
-export function CombatantRow({ combatant: c, isActive, isSelected, conditionNames, conditionHelp, combatants, activeId, dispatch, onSelect }: CombatantRowProps) {
+export function CombatantRow({ combatant: c, isActive, isSelected, conditionNames, conditionHelp, combatants, activeId, defenses, dispatch, onSelect }: CombatantRowProps) {
   // The text in the HP amount box, used by the Damage / Heal / Temp buttons.
   const [amount, setAmount] = useState('')
   const value = parseInt(amount)
+  // The damage type picker (only on creatures with resistances etc.); '' = untyped, full damage.
+  const [damageType, setDamageType] = useState('')
+  const [magical, setMagical] = useState(false)
+  const showTypes = hasDamageDefenses(defenses)
+  const adjusted = !Number.isNaN(value) && damageType ? adjustDamage(value, defenses, damageType, magical) : null
+  const label = adjusted ? adjustmentLabel(adjusted.kinds, damageType) : ''
 
   // Runs a HP action with the amount in the box, then clears the box.
   function applyAmount(type: 'damage' | 'heal' | 'setTempHp') {
     if (Number.isNaN(value)) return
-    dispatch({ type, id: c.id, amount: value })
+    if (type === 'damage' && adjusted && label) {
+      // Typed damage that a resistance, immunity or vulnerability changes: apply it with a note.
+      const text = `${value} ${damageType.toLowerCase()} → ${adjusted.amount} to ${c.name} (${label})`
+      dispatch({
+        type: 'batch',
+        label: `${adjusted.amount} ${damageType.toLowerCase()} damage to ${c.name}`,
+        actions: [{ type: 'damage', id: c.id, amount: adjusted.amount }, { type: 'log', entry: { id: crypto.randomUUID(), text } }],
+      })
+    } else {
+      dispatch({ type, id: c.id, amount: value })
+    }
     setAmount('')
+    setDamageType('')  // back to untyped, so the next hit isn't adjusted by mistake
   }
 
   // Saves a new initiative typed into the box.
@@ -63,6 +86,14 @@ export function CombatantRow({ combatant: c, isActive, isSelected, conditionName
           c.name
         )}
         <span className="tag">{c.isPlayer ? 'PC' : 'NPC'}</span>
+        {/* Resistances etc. on their own line, so long lists wrap instead of widening the table */}
+        {hasDamageDefenses(defenses) && (
+          <div className="defense-tags">
+            {defenseTags(defenses).map((t) => (
+              <span key={t.kind} className={`tag defense-tag ${t.kind}`} title={t.title}>{t.text}</span>
+            ))}
+          </div>
+        )}
       </td>
       <td className="ac">{c.ac}</td>
       <td className="hp-cell">
@@ -99,6 +130,7 @@ export function CombatantRow({ combatant: c, isActive, isSelected, conditionName
             available={conditionNames.filter((name) => !c.conditions.includes(name))}
             combatants={combatants}
             defaultOwnerId={activeId ?? c.id}
+            immuneTo={defenses.conditionImmunities}
             onAdd={(condition, timer) => dispatch({ type: 'addCondition', id: c.id, condition, timer })}
           />
         </div>
@@ -115,7 +147,21 @@ export function CombatantRow({ combatant: c, isActive, isSelected, conditionName
           // Enter applies damage, the most common action
           onKeyDown={(e) => e.key === 'Enter' && applyAmount('damage')}
         />
-        <button type="button" className="damage" onClick={() => applyAmount('damage')} title="Take damage (temp HP first)">Dmg</button>
+        {showTypes && (
+          <select className="damage-type" value={damageType} onChange={(e) => setDamageType(e.target.value)} aria-label={`Damage type for ${c.name}`}>
+            <option value="">Type…</option>
+            {DAMAGE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        )}
+        {showTypes && hasNonmagicalRules(defenses) && (
+          <label className="checkbox magical" title="Magical attack: ignores resistances to nonmagical attacks">
+            <input type="checkbox" checked={magical} onChange={(e) => setMagical(e.target.checked)} />
+            Magical
+          </label>
+        )}
+        <button type="button" className="damage" onClick={() => applyAmount('damage')} title="Take damage (temp HP first)">
+          {label ? `Dmg ${adjusted!.amount} (${label})` : 'Dmg'}
+        </button>
         <button type="button" className="heal" onClick={() => applyAmount('heal')} title="Heal (up to max HP)">Heal</button>
         <button type="button" onClick={() => applyAmount('setTempHp')} title="Set temporary HP">Temp</button>
         <button type="button" className="remove" onClick={() => dispatch({ type: 'remove', id: c.id })} title="Remove from combat" aria-label={`Remove ${c.name}`}>✕</button>

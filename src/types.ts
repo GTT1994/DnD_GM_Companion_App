@@ -20,6 +20,7 @@ export type Combatant = {
   timers?: Record<string, ConditionTimer>  // durations for some of those conditions, by condition name
   monster?: { edition: Edition; index: string }  // the SRD monster it came from, if any
   pcId?: string         // the party member it represents, if any (their HP is kept in sync)
+  pcDefenses?: PcDefenses        // a PC's damage resistances etc., copied from the party member
   uses?: Record<string, number>  // limited-use abilities spent this fight, e.g. { "slot:3": 2, "feature:Fire Breath": 1 }
   legendaryMax?: number          // legendary actions per round (defaults to 3)
 }
@@ -83,6 +84,9 @@ export type Campaign = {
 }
 
 // A player character in a campaign's party.
+// Damage types a PC resists, is immune to, or is vulnerable to, e.g. { resistant: ['Fire'], ... }.
+export type PcDefenses = { resistant: string[]; immune: string[]; vulnerable: string[] }
+
 export type Pc = {
   id: string
   campaignId: string    // which campaign this PC belongs to (a foreign key)
@@ -97,6 +101,7 @@ export type Pc = {
   passivePerception: number
   passiveInsight: number
   passiveInvestigation: number
+  defenses?: PcDefenses   // missing for PCs saved before resistances existed
 }
 
 // A campaign's free-text notes page.

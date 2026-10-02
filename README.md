@@ -35,6 +35,7 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - Conditions from the SRD, plus Concentrating; hover a condition to read it, click it to remove it
 - **Condition durations**: until removed, a number of rounds, until the start or end of someone's next turn, or save ends. Conditions that run out are removed and listed above the tracker
 - **Saves waiting for you** above the tracker: "save ends" conditions at the end of the creature's turn, and Con saves when a concentrating creature takes damage. Monsters roll with their bonus; for PCs press Passed or Failed
+- **Resistances, immunities and vulnerabilities** from stat blocks (and PC sheets) show as tags on each row. Those rows get a damage type picker, so typed-in player damage is adjusted (½, ×2 or 0), with a **Magical** tick-box for "from nonmagical attacks". Temporary ones (Rage, Absorb Elements) are added from + Condition, and a warning shows for conditions a creature is immune to
 - **Group save**: pick the ability, DC and targets (monsters roll, players tick their result), optionally roll damage once (half or none on a success) and add a condition to everyone who failed
 - **Start combat** asks for each player's initiative roll (or rolls a d20 for them); monsters roll their own
 - **Undo / Redo** (⌘Z / ⇧⌘Z) for the last 20 changes, named on hover, e.g. "Undo: 8 damage to Thorin". PC HP on the party cards follows
@@ -97,7 +98,7 @@ Custom NPCs with species, gender, role, location, faction, attitude, status, por
 Session plan with a template and tick-boxes, formatted campaign notes, party cards, planned encounters on the Overview, and End session into an editable session log.
 
 ### Combat quality of life ✅
-Condition durations, saves waiting above the tracker (save ends and concentration), monster saving throw buttons, group saves, the initiative prompt, Undo / Redo and Reset combat.
+Condition durations, saves waiting above the tracker (save ends and concentration), monster saving throw buttons, group saves, the initiative prompt, Undo / Redo, Reset combat, and resistances / immunities / vulnerabilities applied to damage.
 
 ### Later: All-in-one toolkit
 - Campaign wiki: locations, factions and items, linked to each other and to NPCs
@@ -147,6 +148,7 @@ npm run srd    # re-download the SRD data into src/data/srd/
 - **Previous turn** moves the turn marker back but doesn't undo condition timers that ran out or counted down; use **Undo** to fully reverse a Next turn.
 - **Undo history** lasts while the combat page is open, and covers changes made in the tracker (not monsters added from Quick Lookup, encounters, NPCs or Add party).
 - **Group save damage** from a monster's action uses its first damage part (e.g. a breath weapon's dice); edit the box for anything else.
+- **Unusual resistances** the app can't check (e.g. "from magic weapons wielded by good creatures", "damage from spells", silvered or adamantine weapons) are shown with a ⚠ on the tag and not applied automatically.
 - **NPC portraits** are shrunk to 256 px and stored in the database, so each one adds roughly 10–30 KB to a backup file.
 - **Data lives in this browser only.** Clearing site data deletes it, so use **Export all** on the home page for backups.
 

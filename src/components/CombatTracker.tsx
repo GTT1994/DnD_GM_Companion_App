@@ -1,9 +1,10 @@
 // The combat tracker page: turn order, round counter, HP and conditions for everyone in the fight.
 
 import { useState, type Dispatch } from 'react'
-import type { CombatState, Edition } from '../types'
+import type { CombatState, Combatant, Edition } from '../types'
 import { sortByInitiative, uniqueName, type CombatAction } from '../lib/combat'
-import { useSrd } from '../data/srd'
+import { useMonsterLookup, useSrd } from '../data/srd'
+import { combatantDefenses } from '../lib/resistances'
 import { useCampaignRoute } from '../lib/appContext'
 import { AddCombatantForm } from './AddCombatantForm'
 import { CombatantRow } from './CombatantRow'
@@ -33,6 +34,9 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
   const conditionHelp = Object.fromEntries(conditions.map((c) => [c.name, c.desc.replace(/\*\*|^- /gm, '')]))
 
   const order = sortByInitiative(combat.combatants)
+  // Each creature's resistances etc.: from its stat block, PC sheet and temporary conditions.
+  const findMonster = useMonsterLookup()
+  const defensesOf = (c: Combatant) => combatantDefenses(c, findMonster(c.monster))
   const active = order.find((c) => c.id === combat.activeId)
   const hasMonsters = combat.combatants.some((c) => !c.isPlayer)
 
@@ -157,6 +161,7 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
                   conditionHelp={conditionHelp}
                   combatants={order}
                   activeId={combat.activeId}
+                  defenses={defensesOf(c)}
                   dispatch={dispatch}
                   isSelected={c.id === selectedId}
                   onSelect={() => select(c.id === selectedId ? null : c.id)}
@@ -175,6 +180,7 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
           dispatch={dispatch}
           onClose={() => select(null)}
           onGroupSave={openGroupSave}
+          defensesOf={defensesOf}
           onOpenStatBlock={() => selected.monster && onOpenMonster(selected.monster.edition, selected.monster.index)}
         />
       )}

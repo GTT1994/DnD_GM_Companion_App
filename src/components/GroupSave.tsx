@@ -1,7 +1,8 @@
 // Group saves: several creatures make the same saving throw (e.g. against a Fireball or a dragon's
 // breath). Monsters roll with their stat block bonus; for PCs you tick what the players rolled.
-// Optionally rolls damage once (full on a failure, half or none on a success) and adds a
-// condition to everyone who failed, then applies it all to the tracker in one go.
+// Optionally rolls damage once (full on a failure, half or none on a success, then each target's
+// resistances, immunities and vulnerabilities) and adds a condition to everyone who failed (except
+// those immune to it), then applies it all to the tracker in one go.
 
 import { useState, type Dispatch } from 'react'
 import type { Ability, CombatState } from '../types'
@@ -11,8 +12,10 @@ import { useMonsterLookup } from '../data/srd'
 import { sortByInitiative } from '../lib/combat'
 import { blankDuration, toTimer } from '../lib/conditions'
 import { parseDice, rollDice, signed } from '../lib/dice'
-import { ABILITIES, damageAfterSave, rollSave, saveBonus, type GroupSavePreset, type OnSuccess } from '../lib/saves'
+import { ABILITIES, rollSave, saveBonus, type GroupSavePreset, type OnSuccess } from '../lib/saves'
 import { DurationFields } from './ConditionPicker'
+import { DAMAGE_TYPES } from '../lib/homebrew'
+import { adjustmentLabel, adjustParts, combatantDefenses } from '../lib/resistances'
 
 type GroupSaveProps = {
   preset: GroupSavePreset
@@ -35,6 +38,8 @@ export function GroupSave({ preset, combat, conditionNames, dispatch, onClose }:
   const [targets, setTargets] = useState<string[]>(preset.sourceId ? order.filter((c) => c.isPlayer).map((c) => c.id) : [])
   const [damage, setDamage] = useState(preset.damage ?? '')
   const [onSuccess, setOnSuccess] = useState<OnSuccess>(preset.onSuccess ?? 'half')
+  // The data spells types in different ways ("fire", "Fire"); match the drop-down's spelling.
+  const [damageType, setDamageType] = useState(DAMAGE_TYPES.find((t) => t.toLowerCase() === preset.damageType?.toLowerCase()) ?? '')
   const [condition, setCondition] = useState('')
   const [duration, setDuration] = useState(() => blankDuration(preset.sourceId ?? combat.activeId ?? order[0]?.id ?? ''))
   const [results, setResults] = useState<Result[] | null>(null)
@@ -66,20 +71,36 @@ export function GroupSave({ preset, combat, conditionNames, dispatch, onClose }:
   }
 
   const setPassed = (id: string, passed: boolean) => setResults(results!.map((r) => (r.id === id ? { ...r, passed } : r)))
-  const amountFor = (r: Result) => (damageRoll && r.passed !== null ? damageAfterSave(damageRoll.total, r.passed, onSuccess) : 0)
+  const defensesOf = (id: string) => {
+    const c = combat.combatants.find((x) => x.id === id)!
+    return combatantDefenses(c, findMonster(c.monster))
+  }
+  // Damage for one target: full or half (or none) from the save, then its defences.
+  // Spells and breath weapons count as magical, so "nonmagical attacks" resistances don't apply.
+  const adjustedFor = (r: Result) => {
+    if (!damageRoll || r.passed === null) return null
+    if (r.passed && onSuccess === 'none') return { amount: 0, label: '' }
+    const result = adjustParts([{ total: damageRoll.total, type: damageType || undefined }], defensesOf(r.id), { half: r.passed, magical: true })
+    return { amount: result.amount, label: adjustmentLabel(result.kinds, damageType) }
+  }
+  const amountFor = (r: Result) => adjustedFor(r)?.amount ?? 0
+  const immuneTo = (id: string) => !!condition && defensesOf(id).conditionImmunities.some((c) => c.toLowerCase() === condition.toLowerCase())
 
   function apply() {
     if (!results) return
-    const type = preset.damageType ? ` ${preset.damageType}` : ''
+    const type = damageType ? ` ${damageType.toLowerCase()}` : ''
     const actions: CombatAction[] = []
     const lines: string[] = []
     for (const r of results) {
       const amount = amountFor(r)
       if (amount > 0) actions.push({ type: 'damage', id: r.id, amount })
-      if (!r.passed && condition) actions.push({ type: 'addCondition', id: r.id, condition, timer: timer ?? undefined })
+      const gainsCondition = !r.passed && !!condition && !immuneTo(r.id)
+      if (gainsCondition) actions.push({ type: 'addCondition', id: r.id, condition, timer: timer ?? undefined })
       const rolled = r.roll ? ` (${r.roll.total})` : ''
-      const took = damageRoll ? `, takes ${amount}${type}` : ''
-      lines.push(`${nameOf(r.id)}${rolled} ${r.passed ? 'saves' : 'fails'}${took}${!r.passed && condition ? `, ${condition}` : ''}`)
+      const adjusted = adjustedFor(r)
+      const took = damageRoll ? `, takes ${amount}${type}${adjusted?.label ? ` (${adjusted.label})` : ''}` : ''
+      const effect = gainsCondition ? `, ${condition}` : !r.passed && condition ? `, immune to ${condition}` : ''
+      lines.push(`${nameOf(r.id)}${rolled} ${r.passed ? 'saves' : 'fails'}${took}${effect}`)
     }
     // The roll history shows newest first, so the heading goes in last.
     const heading = `${preset.label ?? 'Group save'}: DC ${dcValue} ${ability} save${damageRoll ? `, ${damageRoll.total}${type} damage` : ''}`
@@ -119,6 +140,13 @@ export function GroupSave({ preset, combat, conditionNames, dispatch, onClose }:
             <label className={damageValid ? '' : 'invalid'}>
               Damage (optional)
               <input value={damage} onChange={(e) => setDamage(e.target.value)} placeholder="8d6 or 28" />
+            </label>
+            <label>
+              Damage type
+              <select value={damageType} onChange={(e) => setDamageType(e.target.value)} disabled={!damage.trim()}>
+                <option value="">untyped</option>
+                {DAMAGE_TYPES.map((t) => <option key={t}>{t}</option>)}
+              </select>
             </label>
             <label>
               On a success
@@ -180,7 +208,10 @@ export function GroupSave({ preset, combat, conditionNames, dispatch, onClose }:
                       <button type="button" className={r.passed === false ? 'selected' : ''} onClick={() => setPassed(r.id, false)}>Failed</button>
                     </span>
                   </td>
-                  <td className="group-amount">{damageRoll && r.passed !== null ? `${amountFor(r)} dmg` : ''}</td>
+                  <td className="group-amount">
+                    {adjustedFor(r) && <>{amountFor(r)} dmg{adjustedFor(r)!.label && <span className="meta"> ({adjustedFor(r)!.label})</span>}</>}
+                    {!r.passed && immuneTo(r.id) && <span className="meta"> · immune to {condition}</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>

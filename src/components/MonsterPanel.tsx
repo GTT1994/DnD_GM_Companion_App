@@ -9,6 +9,7 @@ import { sortByInitiative, type CombatAction } from '../lib/combat'
 import { defaultIncluded, LEGENDARY_KEY, type D20Mode } from '../lib/actions'
 import { parseDice, signed } from '../lib/dice'
 import { stripUsageLabel } from '../lib/homebrew'
+import type { Defenses } from '../lib/resistances'
 import { ABILITIES, rollSave, saveBonus, toAbility, type GroupSavePreset } from '../lib/saves'
 import { Markdown } from './Markdown'
 import { DamageRoller, ToHit, type RollContext } from './RollWidgets'
@@ -22,9 +23,10 @@ type MonsterPanelProps = {
   onClose: () => void
   onOpenStatBlock: () => void
   onGroupSave: (preset: GroupSavePreset) => void
+  defensesOf: (c: Combatant) => Defenses
 }
 
-export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatBlock, onGroupSave }: MonsterPanelProps) {
+export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatBlock, onGroupSave, defensesOf }: MonsterPanelProps) {
   const [mode, setMode] = useState<D20Mode>('normal')
   // Load the rules data for the edition this monster was added from.
   const edition = combatant.monster?.edition ?? '2024'
@@ -39,6 +41,7 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
     dispatch,
     log: (text) => dispatch({ type: 'log', entry: { id: crypto.randomUUID(), text } }),
     openGroupSave: onGroupSave,
+    defensesOf,
   }
 
   // Spellcasting traits (2014) are shown up front; the other traits are tucked away below.

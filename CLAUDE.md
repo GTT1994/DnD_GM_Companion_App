@@ -24,6 +24,7 @@ A DnD 5e companion app for Game Masters, for personal use on a laptop. See [READ
 - `src/lib/npcFields.ts`: NPC defaults (also used by the version 4 upgrade and old backups), generated → saved NPCs, search; `npcs.ts` for NPC writes, adding to combat and portrait resizing
 - `src/lib/richText.ts`: formatted notes are stored as TipTap editor JSON (`RichDoc`); template, carry-over of unticked items, old plain text. `sessions.ts` for notes/plan saving and End session; `components/RichEditor.tsx` is the editor; `useAutosave.ts` the save-as-you-type hook
 - `src/lib/useCombatHistory.ts`: Undo / Redo for the combat page (`applyCombatAction` returns the state before each change; `combatHistory.ts` names changes)
+- `src/lib/resistances.ts`: reads stat block resistance text into rules, gathers a combatant's defences (stat block, PC sheet, "Resistant: Fire" conditions) and adjusts damage
 - `src/lib/conditions.ts`: condition timers (run by `combatReducer` on each turn change) and the duration form; `saves.ts` for save bonuses, rolls and damage after a save
 - `src/lib/encounters.ts`: encounter difficulty (2014 thresholds/multipliers, 2024 budgets) and loading encounters into combat
 - `src/lib/homebrew.ts`: homebrew conversions (base + per-level dice → SRD-style tables), SRD copies, checks before saving

@@ -104,6 +104,7 @@ export function addPartyToCombat(campaignId: string) {
         isPlayer: true,
         conditions: [],
         pcId: pc.id,
+        pcDefenses: pc.defenses,
       }))
     if (added.length) await applyCombatAction(campaignId, { type: 'add', combatants: added })
     return added.length
@@ -126,7 +127,7 @@ export function updatePc(pc: Pc, fields: PcFields) {
     const combat = await getCombat(pc.campaignId)
     if (combat.combatants.some((c) => c.pcId === pc.id)) {
       const combatants = combat.combatants.map((c) =>
-        c.pcId === pc.id ? { ...c, name: fields.name, ac: fields.ac, maxHp: fields.maxHp, hp: currentHp } : c)
+        c.pcId === pc.id ? { ...c, name: fields.name, ac: fields.ac, maxHp: fields.maxHp, hp: currentHp, pcDefenses: fields.defenses } : c)
       await db.combats.put({ ...combat, combatants })
     }
   })

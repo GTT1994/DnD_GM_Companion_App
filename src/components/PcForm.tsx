@@ -1,8 +1,11 @@
-// A form for adding a player character to a campaign's party, or editing one.
+// A form for adding a player character to a campaign's party, or editing one, including the
+// damage types they resist, are immune to, or are vulnerable to (folded away until needed).
 
 import { useState } from 'react'
 import type { Pc } from '../types'
 import type { PcFields } from '../lib/store'
+import { DAMAGE_TYPES } from '../lib/homebrew'
+import { DEFENSE_LABELS, DEFENSES, emptyPcDefenses } from '../lib/resistances'
 
 type PcFormProps = {
   pc?: Pc                              // the PC being edited; leave out to add a new one
@@ -36,6 +39,12 @@ export function PcForm({ pc, onSave, onCancel }: PcFormProps) {
     passiveInvestigation: String(pc?.passiveInvestigation ?? 10),
   })
 
+  const [defenses, setDefenses] = useState(pc?.defenses ?? emptyPcDefenses())
+  const defenseCount = DEFENSES.reduce((n, k) => n + defenses[k].length, 0)
+  // Ticks or unticks one damage type for resistant / immune / vulnerable.
+  const toggle = (kind: (typeof DEFENSES)[number], type: string, on: boolean) =>
+    setDefenses({ ...defenses, [kind]: on ? [...defenses[kind], type] : defenses[kind].filter((t) => t !== type) })
+
   return (
     <form
       className="panel-form"
@@ -46,6 +55,7 @@ export function PcForm({ pc, onSave, onCancel }: PcFormProps) {
           name: name.trim(), playerName: playerName.trim(), className: className.trim(),
           level: n('level'), ac: n('ac'), maxHp: n('maxHp'),
           passivePerception: n('passivePerception'), passiveInsight: n('passiveInsight'), passiveInvestigation: n('passiveInvestigation'),
+          defenses,
         })
       }}
     >
@@ -74,6 +84,34 @@ export function PcForm({ pc, onSave, onCancel }: PcFormProps) {
           />
         </label>
       ))}
+      <details className="pc-defenses wide" open={defenseCount > 0}>
+        <summary>Resistances, immunities and vulnerabilities{defenseCount > 0 && ` (${defenseCount})`}</summary>
+        <table className="defense-grid">
+          <thead>
+            <tr>
+              <th></th>
+              {DEFENSES.map((k) => <th key={k}>{DEFENSE_LABELS[k]}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {DAMAGE_TYPES.map((type) => (
+              <tr key={type}>
+                <td>{type}</td>
+                {DEFENSES.map((k) => (
+                  <td key={k}>
+                    <input
+                      type="checkbox"
+                      checked={defenses[k].includes(type)}
+                      onChange={(e) => toggle(k, type, e.target.checked)}
+                      aria-label={`${DEFENSE_LABELS[k]} to ${type}`}
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
       <button type="submit" className="primary">{pc ? 'Save' : 'Add to party'}</button>
       <button type="button" onClick={onCancel}>Cancel</button>
     </form>
