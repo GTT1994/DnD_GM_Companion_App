@@ -50,6 +50,12 @@ export function describeAction(action: CombatAction, before: CombatState): strin
       return `${name(action.id)} legendary actions`
     case 'concentrate':
       return `${name(action.id)} concentrates on ${action.spell}`
+    case 'setLair':
+      return `edit ${name(action.id)}`
+    case 'useLairAction':
+      return `${name(action.id)} action`
+    case 'setInLair':
+      return `${name(action.id)} ${action.inLair ? 'in' : 'out of'} lair`
     case 'batch':
       return action.label ?? 'several changes'
     case 'log':

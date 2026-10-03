@@ -23,6 +23,14 @@ export type Combatant = {
   pcDefenses?: PcDefenses        // a PC's damage resistances etc., copied from the party member
   uses?: Record<string, number>  // limited-use abilities spent this fight, e.g. { "slot:3": 2, "feature:Fire Breath": 1 }
   legendaryMax?: number          // legendary actions per round (defaults to 3)
+  lair?: Lair                    // set for a lair: its turn lists lair actions instead of HP and attacks
+  inLair?: boolean               // a monster fighting in its lair (e.g. 4/Day Legendary Resistance instead of 3)
+}
+
+// A lair in the turn order (usually initiative 20, losing ties), with its lair actions typed in by the GM.
+export type Lair = {
+  actions: string[]
+  used?: { index: number; round: number }  // the last lair action used; it can't be used again the next round
 }
 
 // One line in the combat's roll history.

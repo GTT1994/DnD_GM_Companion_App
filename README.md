@@ -47,12 +47,14 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - **Group save**: pick the ability, DC and targets (monsters roll, players tick their result), optionally roll damage once (half or none on a success) and add a condition to everyone who failed
 - **Start combat** asks for each player's initiative roll (or rolls a d20 for them); monsters roll their own
 - **Undo / Redo** (⌘Z / ⇧⌘Z) for the last 20 changes, named on hover, e.g. "Undo: 8 damage to Thorin". PC HP on the party cards follows
+- **Lairs**: More ▾ → **Add lair** with its lair actions typed in, one per line. It takes a turn on initiative 20 (losing ties); on its turn its panel lists the actions with **Use**, and the one used last round can't be picked again. Monsters with "X/Day, or Y/Day in Lair" abilities get an **In its lair** tick-box (e.g. 4 Legendary Resistances instead of 3)
 - Edit initiative inline. Under **More ▾**: End combat, **Reset combat** (run the same fight again: full HP, no conditions, spell slots and uses back), Clear NPCs (keeps the party for the next fight) and Clear all
 - The toolbar stays put at the top of the screen. Click a monster's name and the table narrows to the left while its **actions panel** slides in on the right (it also opens automatically on the monster's turn):
   - **To hit** (with advantage/disadvantage) and **Damage** buttons for every attack; a natural 20 doubles the damage dice
   - Tick boxes for extra or conditional damage, saving throw DCs, and **Apply** / **Apply half** to a target
   - **Saving throw** buttons for all six abilities (with proficiencies), and **Group save** on breath weapons and save spells, filled in for you
   - Recharge abilities, X/Day uses and legendary actions tracked with clickable pips
+  - **Mob attack** on attacks when two or more of that monster are fighting: the DMG's mob rules turn the target's AC into hits (e.g. 4 goblins vs AC 13 → 2 hits), roll damage for each hit and apply it, adjusted for resistances
   - **Spellcasting**: spell slots, upcasting, X/Day spells, spell details, spell attacks and damage, and automatic Concentrating (with a Con save reminder when hit)
   - A quick dice roller for monsters you added by hand, and a history of the last 10 rolls
 - Everything is saved in the browser's database, so a refresh doesn't lose the fight
@@ -124,7 +126,7 @@ A dice tray on every page (🎲 or the D key) with advantage, keep highest / low
 
 ### Monster tools (in progress)
 - Monster and spell filters ✅
-- Lair actions (typed in for the fight, initiative 20) and mob attacks (the DMG's hits-per-attackers table)
+- Lair actions (typed in for the fight, initiative 20) and mob attacks (the DMG's hits-per-attackers table) ✅
 - Scale a monster to a new CR, saved as a homebrew copy
 
 ### Next: suggested quality of life

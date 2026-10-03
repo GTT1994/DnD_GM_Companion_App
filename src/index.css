@@ -1556,3 +1556,25 @@ button.dice-link:hover { background: var(--panel-raised); }
 .filter-grid select { width: 100%; font-size: 0.85rem; padding: 0.2em 0.3em; }
 .monster-picker .filter-bar { margin-top: 0.4rem; }
 .monster-picker .results { max-height: 22rem; }
+
+/* Lairs in the combat tracker */
+tr.combatant.lair td { background: color-mix(in srgb, var(--panel) 85%, #5a3a8a); }
+.tag.lair-tag { border-color: #8a6ac0; color: #b9a0e6; }
+.lair-summary { font-size: 0.85rem; max-width: 30rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.add-lair { margin-top: 0.75rem; }
+.lair-form { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem; }
+.lair-form-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.6rem; }
+.lair-form label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: var(--text-dim); }
+.lair-form textarea { width: 100%; font: inherit; color: var(--text); }
+.lair-actions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.lair-action { display: flex; align-items: flex-start; gap: 0.6rem; }
+.lair-action .markdown { flex: 1; }
+.lair-action .markdown p { margin: 0; }
+.lair-action.lastRound { opacity: 0.55; }
+.lair-action.thisRound { border-color: var(--gold); }
+.in-lair { display: flex; align-items: center; gap: 0.4rem; margin: 0.2rem 0 0.5rem; }
+
+/* Mob attacks */
+.mob-attack { display: flex; flex-direction: column; gap: 0.35rem; margin: 0.35rem 0; padding: 0.45rem; border: 1px dashed var(--border); border-radius: 6px; }
+.mob-attack label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-dim); }
+.mob-odds { margin: 0; }

@@ -60,6 +60,37 @@ export function CombatantRow({ combatant: c, isActive, isSelected, conditionName
     if (!Number.isNaN(initiative) && initiative !== c.initiative) dispatch({ type: 'setInitiative', id: c.id, initiative })
   }
 
+  // A lair has no HP, AC or conditions: its row shows the lair action used this round.
+  if (c.lair) {
+    const used = c.lair.used
+    return (
+      <tr className={['combatant', 'lair', isActive && 'active', isSelected && 'selected'].filter(Boolean).join(' ')}>
+        <td className="turn-marker">{isActive ? '▶' : ''}</td>
+        <td>
+          <input
+            key={c.initiative}
+            type="number"
+            className="init-input"
+            defaultValue={c.initiative}
+            aria-label={`Initiative for ${c.name}`}
+            onBlur={(e) => commitInitiative(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+          />
+        </td>
+        <td className="name-cell">
+          <button type="button" className="link" onClick={onSelect} title="Show lair actions">{c.name}</button>
+          <span className="tag lair-tag">Lair</span>
+        </td>
+        <td colSpan={3} className="lair-summary meta">
+          {used ? `Last used (round ${used.round}): ${c.lair.actions[used.index]}` : `${c.lair.actions.length} lair action${c.lair.actions.length === 1 ? '' : 's'}`}
+        </td>
+        <td className="actions-cell">
+          <button type="button" className="remove" onClick={() => dispatch({ type: 'remove', id: c.id })} title="Remove from combat" aria-label={`Remove ${c.name}`}>✕</button>
+        </td>
+      </tr>
+    )
+  }
+
   const hpPercent = Math.round((c.hp / c.maxHp) * 100)
   const classes = ['combatant', isActive && 'active', isSelected && 'selected', c.hp === 0 && 'down', c.isPlayer ? 'player' : 'monster']
 

@@ -15,6 +15,9 @@ import { GroupSave } from './GroupSave'
 import { TurnAlerts } from './TurnAlerts'
 import { InitiativePrompt } from './InitiativePrompt'
 import { MoreMenu } from './MoreMenu'
+import { LairForm } from './LairForm'
+import { LairPanel } from './LairPanel'
+import { newLair } from '../lib/lair'
 import type { GroupSavePreset } from '../lib/saves'
 
 const PANEL_ANIMATION_MS = 250  // how long the panel takes to slide in or out (matches the CSS)
@@ -43,6 +46,8 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
   const defensesOf = (c: Combatant) => combatantDefenses(c, findMonster(c.monster))
   const active = order.find((c) => c.id === combat.activeId)
   const hasMonsters = combat.combatants.some((c) => !c.isPlayer)
+  // The Add lair form (from More ▾).
+  const [addingLair, setAddingLair] = useState(false)
 
   // Which monster's actions panel is open. A click picks one; when the turn moves to a monster,
   // the panel follows it (a player's turn leaves the panel as it was).
@@ -119,6 +124,7 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
             )}
             <MoreMenu
               items={[
+                { label: 'Add lair', title: 'Lair actions on initiative 20, typed in for this fight', onClick: () => setAddingLair(true) },
                 { label: 'End combat', title: 'Reset the round counter and clear conditions', disabled: combat.round === 0, onClick: () => dispatch({ type: 'endCombat' }) },
                 {
                   label: 'Reset combat',
@@ -143,6 +149,23 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
           // Number duplicate names, e.g. a second "Bandit" becomes "Bandit 2".
           onAdd={(c) => dispatch({ type: 'add', combatants: [{ ...c, name: uniqueName(c.name, combat.combatants) }] })}
         />
+      )}
+
+      {addingLair && (
+        <section className="add-lair card" aria-label="Add lair">
+          <div className="group-save-header">
+            <h3>Add lair <span className="meta">· its lair actions happen on initiative 20, losing ties</span></h3>
+            <button type="button" className="remove" onClick={() => setAddingLair(false)} aria-label="Close add lair">✕</button>
+          </div>
+          <LairForm
+            submitLabel="Add lair"
+            onSubmit={(lair) => {
+              dispatch({ type: 'add', combatants: [newLair(uniqueName(lair.name, combat.combatants), lair.actions, lair.initiative)] })
+              setAddingLair(false)
+            }}
+            onClose={() => setAddingLair(false)}
+          />
+        </section>
       )}
 
       {askingInitiative && combat.round === 0 && (
@@ -204,7 +227,10 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
 
         {/* Stays in place while open; slides in and out. Shows the last monster while closing. */}
         <div className="panel-slot">
-          {shown && (
+          {shown?.lair && (
+            <LairPanel key={shown.id} lair={shown} combat={combat} dispatch={dispatch} onClose={() => select(null)} />
+          )}
+          {shown && !shown.lair && (
             <MonsterPanel
               key={shown.id}  // start fresh (rolls, advantage) when switching monsters
               combatant={shown}

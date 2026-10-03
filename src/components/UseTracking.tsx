@@ -3,6 +3,7 @@
 
 import type { Feature } from '../data/srd'
 import { featureKey } from '../lib/actions'
+import { inLairTimes } from '../lib/lair'
 import { rollDie } from '../lib/dice'
 import type { RollContext } from './RollWidgets'
 
@@ -42,7 +43,9 @@ export function FeatureUsage({ feature, ctx }: { feature: Feature; ctx: RollCont
   if (!usage) return null
 
   if (usage.type === 'perDay') {
-    return <UsePips used={used} max={usage.times} onChange={setUsed} label={`${feature.name} uses`} />
+    // e.g. "Legendary Resistance (3/Day, or 4/Day in Lair)" gets 4 when the monster is in its lair.
+    const max = (ctx.self.inLair && inLairTimes(feature.name)) || usage.times
+    return <UsePips used={used} max={max} onChange={setUsed} label={`${feature.name} uses`} />
   }
 
   // Recharge X–6: once used, roll a d6 at the start of the creature's turn to get it back.

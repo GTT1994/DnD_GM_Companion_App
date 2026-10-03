@@ -15,6 +15,8 @@ import { Markdown } from './Markdown'
 import { DamageRoller, ToHit, type RollContext } from './RollWidgets'
 import { SpellcastingCard } from './SpellcastingCard'
 import { FeatureUsage, UsePips } from './UseTracking'
+import { MobAttack } from './MobAttack'
+import { creatures, inLairTimes } from '../lib/lair'
 
 type MonsterPanelProps = {
   combatant: Combatant
@@ -36,7 +38,7 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
 
   const ctx: RollContext = {
     self: combatant,
-    targets: sortByInitiative(combat.combatants).filter((c) => c.id !== combatant.id),
+    targets: creatures(sortByInitiative(combat.combatants)).filter((c) => c.id !== combatant.id),  // not lairs
     mode,
     dispatch,
     log: (text) => dispatch({ type: 'log', entry: { id: crypto.randomUUID(), text } }),
@@ -47,6 +49,10 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
   // Spellcasting traits (2014) are shown up front; the other traits are tucked away below.
   const spellTraits = monster?.traits?.filter((t) => t.spellcasting) ?? []
   const otherTraits = monster?.traits?.filter((t) => !t.spellcasting) ?? []
+  // Monsters with more uses in their lair (e.g. Legendary Resistance) get an "In lair" toggle.
+  const lairFeature = monster && [...(monster.traits ?? []), ...(monster.actions ?? [])].find((f) => inLairTimes(f.name))
+  // How many of this monster are still standing, for mob attacks.
+  const mobSize = combat.combatants.filter((c) => c.hp > 0 && c.monster && c.monster.index === combatant.monster?.index && c.monster.edition === combatant.monster?.edition).length
 
   return (
     <aside className="monster-panel" aria-label={`${combatant.name} actions`}>
@@ -60,6 +66,13 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
         </div>
         <button type="button" className="remove" onClick={onClose} aria-label="Close panel">✕</button>
       </header>
+
+      {lairFeature && (
+        <label className="checkbox in-lair" title={lairFeature.name}>
+          <input type="checkbox" checked={!!combatant.inLair} onChange={(e) => dispatch({ type: 'setInLair', id: combatant.id, inLair: e.target.checked })} />
+          In its lair <span className="meta">({inLairTimes(lairFeature.name)}/Day {lairFeature.name.replace(/\s*\(.*\)/, '')})</span>
+        </label>
+      )}
 
       {/* Advantage / disadvantage for every to-hit roll and save in the panel */}
       <div className="mode-switch" role="group" aria-label="Roll mode">
@@ -84,7 +97,7 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
         <>
           <SavingThrows monster={monster} ctx={ctx} />
           <FeatureSection title="Spellcasting" features={spellTraits} render={(f) => <SpellcastingCard feature={f as SpellFeature} monster={monster} spells={spells} ctx={ctx} />} />
-          <FeatureSection title="Actions" features={monster.actions} render={(f) => renderFeature(f)} />
+          <FeatureSection title="Actions" features={monster.actions} render={(f) => renderFeature(f, mobSize)} />
           <FeatureSection title="Bonus Actions" features={monster.bonusActions} render={(f) => renderFeature(f)} />
           <FeatureSection title="Reactions" features={monster.reactions} render={(f) => renderFeature(f)} />
           {monster.legendaryActions?.length ? <LegendarySection features={monster.legendaryActions} ctx={ctx} /> : null}
@@ -102,10 +115,11 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
   )
 
   // Spellcasting actions (2024) get the spell card; everything else an action card.
-  function renderFeature(f: Feature) {
+  // mobSize: set for actions, so attacks can offer Mob attack when several of this monster are fighting.
+  function renderFeature(f: Feature, mobSize?: number) {
     return f.spellcasting
       ? <SpellcastingCard feature={f as SpellFeature} monster={monster!} spells={spells} ctx={ctx} />
-      : <ActionCard feature={f} ctx={ctx} />
+      : <ActionCard feature={f} ctx={ctx} mobSize={mobSize} />
   }
 }
 
@@ -126,10 +140,11 @@ type ActionCardProps = {
   feature: Feature
   ctx: RollContext
   legendary?: { cost: number; left: number; onUse: () => void }  // set for legendary actions
+  mobSize?: number  // how many of this monster are standing; 2+ offers Mob attack on attacks
 }
 
 // One trait or action: its limits, to-hit and damage rolls, and description.
-function ActionCard({ feature, ctx, legendary }: ActionCardProps) {
+function ActionCard({ feature, ctx, legendary, mobSize = 0 }: ActionCardProps) {
   const [crit, setCrit] = useState(false)  // the last to-hit roll was a natural 20
   const hasRolls = feature.attack !== undefined || !!feature.damage?.length
 
@@ -172,6 +187,9 @@ function ActionCard({ feature, ctx, legendary }: ActionCardProps) {
         </p>
       )}
       {feature.attack !== undefined && <ToHit label={feature.name} bonus={feature.attack} ctx={ctx} onRolled={setCrit} />}
+      {feature.attack !== undefined && feature.damage?.length && mobSize >= 2 ? (
+        <MobAttack feature={{ ...feature, attack: feature.attack }} ctx={ctx} mobSize={mobSize} />
+      ) : null}
       {feature.damage?.length ? (
         <DamageRoller
           label={feature.name}

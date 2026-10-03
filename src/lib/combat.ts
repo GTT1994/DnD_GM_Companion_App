@@ -31,16 +31,23 @@ export type CombatAction =
   | { type: 'setLegendaryMax'; id: string; max: number }
   | { type: 'concentrate'; id: string; spell: string }                // start concentrating on a spell
   | { type: 'log'; entry: LogEntry }                                  // add a line to the roll history
+  | { type: 'setLair'; id: string; name: string; initiative: number; actions: string[] }  // edit a lair
+  | { type: 'useLairAction'; id: string; index: number | null }       // tick the lair action used this round (null = untick)
+  | { type: 'setInLair'; id: string; inLair: boolean }
 
 const LOG_LENGTH = 10       // how many rolls the history keeps
 const CONCENTRATING = 'Concentrating'
 
 export const emptyCombat: CombatState = { combatants: [], round: 0, activeId: null }
 
-// Highest initiative first, like ORDER BY initiative DESC. Ties keep the order they were added in.
+// Highest initiative first, like ORDER BY initiative DESC. Lairs lose ties; other ties keep the
+// order they were added in.
 export function sortByInitiative(combatants: Combatant[]): Combatant[] {
-  return [...combatants].sort((a, b) => b.initiative - a.initiative)
+  return [...combatants].sort((a, b) => b.initiative - a.initiative || Number(!!a.lair) - Number(!!b.lair))
 }
+
+// A lair with its "used" tick cleared, for a fresh fight.
+const freshLair = (c: Combatant): Combatant => (c.lair ? { ...c, lair: { actions: c.lair.actions } } : c)
 
 // Damage comes off temporary HP first, then real HP, which can't go below 0.
 export function applyDamage(c: Combatant, amount: number): Combatant {
@@ -208,7 +215,7 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
       // Keep everyone, but reset the round counter, conditions, legendary actions, waiting saves and
       // roll history. Daily uses and spell slots are kept: they only come back after a rest.
       return {
-        combatants: state.combatants.map((c) => ({ ...setUse(c, LEGENDARY_KEY, 0), conditions: [], timers: {} })),
+        combatants: state.combatants.map((c) => ({ ...freshLair(setUse(c, LEGENDARY_KEY, 0)), conditions: [], timers: {} })),
         round: 0,
         activeId: null,
         log: [],
@@ -219,7 +226,7 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
       // Everyone back to full HP with no conditions, and every limited use restored; same people,
       // same initiative, round not started.
       return {
-        combatants: state.combatants.map((c) => ({ ...c, hp: c.maxHp, tempHp: 0, conditions: [], timers: {}, uses: {} })),
+        combatants: state.combatants.map((c) => ({ ...freshLair(c), hp: c.maxHp, tempHp: 0, conditions: [], timers: {}, uses: {} })),
         round: 0,
         activeId: null,
         log: [],
@@ -247,6 +254,24 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
     }
     case 'log':
       return addLog(state, action.entry)
+    case 'setLair':
+      return updateOne(state, action.id, (c) => ({
+        ...c,
+        name: action.name,
+        initiative: action.initiative,
+        // Keep the "used" tick only if that action is still in the list.
+        lair: { actions: action.actions, used: c.lair?.used && c.lair.used.index < action.actions.length ? c.lair.used : undefined },
+      }))
+    case 'useLairAction': {
+      const lair = state.combatants.find((c) => c.id === action.id)?.lair
+      if (!lair) return state
+      const used = action.index === null ? undefined : { index: action.index, round: state.round }
+      const next = updateOne(state, action.id, (c) => ({ ...c, lair: { ...lair, used } }))
+      const name = state.combatants.find((c) => c.id === action.id)!.name
+      return action.index === null ? next : addLog(next, { id: crypto.randomUUID(), text: `${name}: ${lair.actions[action.index]}` })
+    }
+    case 'setInLair':
+      return updateOne(state, action.id, (c) => ({ ...c, inLair: action.inLair }))
   }
 }
 

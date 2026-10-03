@@ -7,6 +7,7 @@
 import { useState, type Dispatch } from 'react'
 import type { Ability, CombatState } from '../types'
 import type { CombatAction } from '../lib/combat'
+import { creatures } from '../lib/lair'
 import type { D20Mode } from '../lib/actions'
 import { useMonsterLookup } from '../data/srd'
 import { sortByInitiative } from '../lib/combat'
@@ -30,7 +31,7 @@ type Result = { id: string; roll?: { total: number; natural: number; rolls: numb
 
 export function GroupSave({ preset, combat, conditionNames, dispatch, onClose }: GroupSaveProps) {
   const findMonster = useMonsterLookup()
-  const order = sortByInitiative(combat.combatants)
+  const order = creatures(sortByInitiative(combat.combatants))  // lairs don't make saves
   const [ability, setAbility] = useState<Ability>(preset.ability ?? 'Dex')
   const [dc, setDc] = useState(preset.dc ? String(preset.dc) : '')
   const [mode, setMode] = useState<D20Mode>('normal')
