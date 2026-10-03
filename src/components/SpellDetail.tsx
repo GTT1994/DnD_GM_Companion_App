@@ -29,8 +29,8 @@ export function SpellDetail({ spell: s, extra }: SpellDetailProps) {
       <p className="line"><strong>Components</strong> {s.components}</p>
       <p className="line"><strong>Duration</strong> {s.concentration ? `Concentration, ${s.duration.replace(/^Concentration, /i, '')}` : s.duration}</p>
       <div className="rule" />
-      <Markdown text={s.desc} />
-      {s.higherLevel && <Markdown text={`**At Higher Levels.** ${s.higherLevel}`} />}
+      <Markdown text={s.desc} rollLabel={s.name} />
+      {s.higherLevel && <Markdown text={`**At Higher Levels.** ${s.higherLevel}`} rollLabel={s.name} />}
       {s.classes.length > 0 && <p className="meta">Classes: {s.classes.join(', ')}</p>}
     </article>
   )

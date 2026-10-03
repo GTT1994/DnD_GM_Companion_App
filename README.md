@@ -17,6 +17,13 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 - **Add party** puts every PC into the campaign's fight at their current HP
 - Export a campaign (or everything) to a backup file, and import it again, e.g. on another computer
 
+**Dice roller** (every page)
+- The 🎲 button in the bottom-right corner, or press **D** anywhere you're not typing, opens the dice tray; Esc closes it
+- Type rolls like `3d6+2`, `1d8+2d6-1`, `d20+5 adv` / `d20 dis`, `4d6kh3` / `2d20kl1` (keep highest / lowest) or `d%`, or build one with the quick dice buttons (d6, d6, d8 → `2d6+1d8`)
+- The last 20 rolls show each die (dropped dice struck through, natural 20s and 1s highlighted), with ↻ to roll again
+- **Favourites** (★) save rolls you use often as one-click buttons. History and favourites are kept in this browser
+- Dice in spell, magic item, equipment, condition and rules text in Quick Lookup ("8d6 fire damage") are clickable and roll in the tray, labelled with what they came from
+
 **NPCs** (inside each campaign)
 - Write your own NPCs or save generated ones: name, species (list or custom), gender, role, location, faction, attitude (Friendly / Indifferent / Hostile) and status (Alive / Dead / Missing / Unknown)
 - Roleplay prompts (appearance, personality, voice, motivation, secret), a portrait image and Markdown notes, shown formatted beside the form; everything saves as you type
@@ -109,10 +116,12 @@ Names, random encounters by environment, rumours and plot hooks, taverns and sho
 ### Combat quality of life ✅
 Condition durations, saves waiting above the tracker (save ends and concentration), monster saving throw buttons, group saves, the initiative prompt, Undo / Redo, Reset combat, and resistances / immunities / vulnerabilities applied to damage.
 
+### Dice roller ✅
+A dice tray on every page (🎲 or the D key) with advantage, keep highest / lowest, quick dice, favourites and history; dice in Quick Lookup text roll in it.
+
 ### Next: suggested quality of life
 - **Backups and speed**: a "last backup: N days ago" reminder with one-click export on the home page (all data lives in this browser); load pages on demand to shrink the first download (now over 1 MB)
 - **Death saves**: successes and failures for PCs at 0 HP, a reminder on their turn, natural 20 / natural 1 / healing handled
-- **Dice roller everywhere**: a small box on every page for rolls like `3d6+2` or `d20 adv`
 - **⌘K for the campaign**: search NPCs, notes, sessions and encounters as well as the rules
 
 ### Later: All-in-one toolkit

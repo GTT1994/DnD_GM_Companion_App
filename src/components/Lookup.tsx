@@ -173,7 +173,7 @@ function Detail({ selected, data, onAddMonster, onHomebrew }: DetailProps) {
         <article>
           <h2>{item.name}</h2>
           <p className="meta">{item.category}, {item.rarity}{item.rarityNote ? ` (${item.rarityNote})` : ''}{item.attunement ? ' (requires attunement)' : ''}</p>
-          <Markdown text={item.desc} />
+          <Markdown text={item.desc} rollLabel={item.name} />
         </article>
       )
     }
@@ -199,7 +199,7 @@ function Detail({ selected, data, onAddMonster, onHomebrew }: DetailProps) {
               <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
             ))}
           </dl>
-          {item.desc && <Markdown text={item.desc} />}
+          {item.desc && <Markdown text={item.desc} rollLabel={item.name} />}
         </article>
       )
     }
@@ -210,7 +210,7 @@ function Detail({ selected, data, onAddMonster, onHomebrew }: DetailProps) {
       return (
         <article>
           <h2>{entry.name}</h2>
-          <Markdown text={entry.desc} />
+          <Markdown text={entry.desc} rollLabel={entry.name} />
         </article>
       )
     }

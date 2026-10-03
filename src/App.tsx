@@ -9,6 +9,7 @@ import { db, QUICK_COMBAT } from './db'
 import { AppContext, useApp, useCampaignRoute } from './lib/appContext'
 import { useSavedState } from './lib/storage'
 import { migrateLegacyStorage } from './lib/store'
+import { DiceTray } from './components/DiceTray'
 import { Home } from './pages/Home'
 import { CampaignLayout } from './pages/CampaignLayout'
 import { Overview } from './pages/Overview'
@@ -115,6 +116,8 @@ function Layout() {
       ]
 
   return (
+    // The dice tray (🎲 bottom-right, or the D key) is on every page.
+    <DiceTray>
     <div className="app">
       <header className="app-header">
         <Link to="/" className="app-title" title="Home">GM Companion</Link>
@@ -146,6 +149,7 @@ function Layout() {
         Data via <a href="https://github.com/5e-bits/5e-database" target="_blank" rel="noreferrer">5e-database</a> and <a href="https://open5e.com" target="_blank" rel="noreferrer">Open5e</a>.
       </footer>
     </div>
+    </DiceTray>
   )
 }
 

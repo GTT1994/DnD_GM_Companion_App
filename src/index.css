@@ -1458,3 +1458,82 @@ label.invalid input { border-color: var(--red); }
 .shop-stock td { padding: 0.15rem 0.3rem; border-top: 1px solid var(--border); }
 .shop-price { text-align: right; white-space: nowrap; color: var(--gold); }
 .environment-boxes { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; }
+
+/* Dice roller: the 🎲 button in the corner of every page and its tray */
+.dice-fab {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 40;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  padding: 0;
+  background: var(--panel-raised);
+  border: 1px solid var(--gold);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.5);
+}
+.dice-fab[aria-expanded='true'] { background: var(--gold); }
+.dice-tray {
+  position: fixed;
+  right: 1rem;
+  bottom: 4.6rem;
+  z-index: 40;
+  width: min(23rem, calc(100vw - 2rem));
+  max-height: min(70vh, 40rem);
+  overflow-y: auto;
+  padding: 0.8rem;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.dice-tray header { display: flex; align-items: center; justify-content: space-between; }
+.dice-tray h2 { margin: 0; font-size: 1.1rem; }
+.dice-tray .icon-button { background: none; border: none; padding: 0 0.3em; color: var(--text-dim); }
+.dice-tray .icon-button:hover { color: var(--gold-bright); }
+.dice-input { display: flex; gap: 0.35rem; }
+.dice-input input { flex: 1; min-width: 0; }
+.dice-error { margin: 0; color: var(--red); font-size: 0.85rem; }
+.quick-dice { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.quick-dice button { flex: 1; }
+.dice-favourites { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.dice-favourite { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 4px; }
+.dice-favourite button.small { border: none; }
+.dice-history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.dice-roll { padding: 0.35rem 0.5rem; background: var(--bg); border-radius: 4px; }
+.dice-roll:first-child { outline: 1px solid var(--gold); }
+.dice-roll-head { display: flex; align-items: center; gap: 0.5rem; }
+.dice-what { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 0.9rem; }
+.dice-total { font-family: var(--heading); font-size: 1.3rem; color: var(--gold-bright); }
+.dice-faces { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; font-size: 0.8rem; color: var(--text-dim); }
+.dice-term { display: inline-flex; align-items: center; gap: 0.2rem; }
+.die {
+  min-width: 1.5rem;
+  padding: 0 0.25rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+}
+.die.dropped { opacity: 0.45; text-decoration: line-through; }
+.die.nat20 { border-color: var(--green); color: var(--green); font-weight: 700; }
+.die.nat1 { border-color: var(--red); color: var(--red); font-weight: 700; }
+
+/* Dice in rules text that roll in the tray */
+button.dice-link {
+  display: inline;
+  padding: 0 0.15em;
+  font: inherit;
+  color: var(--gold-bright);
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--gold);
+  border-radius: 0;
+  cursor: pointer;
+}
+button.dice-link:hover { background: var(--panel-raised); }
