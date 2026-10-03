@@ -27,6 +27,7 @@ A DnD 5e companion app for Game Masters, for personal use on a laptop. See [READ
 - `src/lib/resistances.ts`: reads stat block resistance text into rules, gathers a combatant's defences (stat block, PC sheet, "Resistant: Fire" conditions) and adjusts damage
 - Generators: `components/generators/` (one component per tab); logic in `lib/generators.ts` (NPCs, names, loot), `lib/worldGenerators.ts` (rumours, hooks, taverns, shops), `lib/randomEncounter.ts`; tables in `data/npcTables.ts`, `data/generatorTables.ts`, `data/environments.ts` (hand-tagged monster environments); `lib/generatorNotes.ts` turns results into session plan / notes text
 - Dice roller: `components/DiceTray.tsx` (the 🎲 tray around every page, D key); `lib/diceRoller.ts` reads and rolls what's typed and finds dice in text; `lib/remarkDice.ts` makes dice in `<Markdown rollLabel>` clickable through `lib/diceTray.ts` context
+- `src/lib/lookupFilters.ts`: monster and spell list filters (Quick Lookup and the encounter builder's `MonsterPicker filters`); the bars are `components/FilterBars.tsx`
 - `src/lib/conditions.ts`: condition timers (run by `combatReducer` on each turn change) and the duration form; `saves.ts` for save bonuses, rolls and damage after a save
 - `src/lib/encounters.ts`: encounter difficulty (2014 thresholds/multipliers, 2024 budgets) and loading encounters into combat
 - `src/lib/homebrew.ts`: homebrew conversions (base + per-level dice → SRD-style tables), SRD copies, checks before saving

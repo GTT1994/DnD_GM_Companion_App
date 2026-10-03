@@ -32,6 +32,7 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 
 **Encounters** (inside each campaign)
 - Prepare fights in advance: monsters (SRD or homebrew) with quantities, notes, and Planned / Used status
+- The monster search has the same **Filters** as Quick Lookup (e.g. CR 2–4 undead in the Underdark), listing matches without typing
 - Live difficulty for the party: 2014 (adjusted XP vs Easy / Medium / Hard / Deadly) or 2024 (XP vs Low / Moderate / High budgets), following the edition switch; untick PCs who aren't at the session
 - **Load into combat**: replace or add to monsters already in the fight, one initiative roll per group, average or rolled HP, and optionally add the party
 
@@ -59,6 +60,8 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 **Quick lookup** (press **⌘K** anywhere)
 - Search conditions, monsters, spells, magic items, equipment (with prices, damage and armour class) and rules, or all of them at once
 - Full monster stat blocks with **Add to combat** (each monster rolls its own initiative)
+- **Monster filters**: CR range, type, size, environment, legendary, homebrew, and resistant / immune / vulnerable to a damage type; sort by name or CR
+- **Spell filters**: class, level, school, casting time (action / bonus action / reaction / longer), spell attack or save (and which ability), damage type, concentration and ritual; sorted by level
 - Quick rules for the things GMs look up most (cover, DCs, exhaustion, grappling, travel pace…), plus the full SRD rules sections for 2014
 - Switch between the **2014** and **2024** rules in the top right
 
@@ -118,6 +121,11 @@ Condition durations, saves waiting above the tracker (save ends and concentratio
 
 ### Dice roller ✅
 A dice tray on every page (🎲 or the D key) with advantage, keep highest / lowest, quick dice, favourites and history; dice in Quick Lookup text roll in it.
+
+### Monster tools (in progress)
+- Monster and spell filters ✅
+- Lair actions (typed in for the fight, initiative 20) and mob attacks (the DMG's hits-per-attackers table)
+- Scale a monster to a new CR, saved as a homebrew copy
 
 ### Next: suggested quality of life
 - **Backups and speed**: a "last backup: N days ago" reminder with one-click export on the home page (all data lives in this browser); load pages on demand to shrink the first download (now over 1 MB)

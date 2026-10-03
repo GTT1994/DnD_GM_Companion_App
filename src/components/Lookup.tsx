@@ -6,6 +6,12 @@ import type { Edition, LookupCategory, LookupState } from '../types'
 import { useSrd, type Equipment, type MagicItem, type Monster, type Spell, type TextEntry } from '../data/srd'
 import { quickRulesFor } from '../data/quickRules'
 import { formatCr } from '../lib/dice'
+import {
+  activeMonsterFilters, activeSpellFilters, compareMonsters, compareSpells, monsterMatches, NO_MONSTER_FILTERS, NO_SPELL_FILTERS,
+  spellMatches, type MonsterFilters, type SpellFilters,
+} from '../lib/lookupFilters'
+import { useSavedState } from '../lib/storage'
+import { MonsterFilterBar, SpellFilterBar } from './FilterBars'
 import { Markdown } from './Markdown'
 import { StatBlock } from './StatBlock'
 import { SpellDetail } from './SpellDetail'
@@ -21,7 +27,7 @@ const CATEGORY_LABELS: Record<LookupState['category'], string> = {
 }
 
 // One row in the results list.
-type ListItem = { category: LookupCategory; index: string; name: string; subtitle: string }
+type ListItem = { category: LookupCategory; index: string; name: string; subtitle: string; cr?: number; level?: number }
 
 // How well a name matches the search: 0 = exact, 1 = starts with it, 2 = contains it.
 function matchRank(name: string, query: string): number {
@@ -53,11 +59,21 @@ export function Lookup({ edition, state, setState, searchRef, onAddMonster, onHo
   // The hand-written quick rules come first, then the full SRD rules sections (2014 only).
   const rules = [...quickRulesFor(edition), ...(srdRules ?? [])]
 
+  // Monster and spell filters (remembered); older saved filters are topped up with the defaults.
+  const [savedMonsterFilters, setMonsterFilters] = useSavedState<MonsterFilters>('monster-filters', NO_MONSTER_FILTERS)
+  const [savedSpellFilters, setSpellFilters] = useSavedState<SpellFilters>('spell-filters', NO_SPELL_FILTERS)
+  const monsterFilters = { ...NO_MONSTER_FILTERS, ...savedMonsterFilters }
+  const spellFilters = { ...NO_SPELL_FILTERS, ...savedSpellFilters }
+  // The filters only apply on their own tab, not in "All".
+  const shownMonsters = (monsters ?? []).filter((m) => state.category !== 'monsters' || monsterMatches(m, monsterFilters))
+  const shownSpells = (spells ?? []).filter((s) => state.category !== 'spells' || spellMatches(s, spellFilters))
+  const filtering = (state.category === 'monsters' && activeMonsterFilters(monsterFilters) > 0) || (state.category === 'spells' && activeSpellFilters(spellFilters) > 0)
+
   // Every entry as a list row, like a UNION ALL of the category tables.
   const all: ListItem[] = [
     ...(conditions ?? []).map((c) => ({ category: 'conditions' as const, index: c.index, name: c.name, subtitle: 'Condition' })),
-    ...(monsters ?? []).map((m) => ({ category: 'monsters' as const, index: m.index, name: m.name, subtitle: `${m.homebrew ? 'Homebrew · ' : ''}CR ${formatCr(m.cr)} · ${m.meta.split(', ')[1]}` })),
-    ...(spells ?? []).map((s) => ({ category: 'spells' as const, index: s.index, name: s.name, subtitle: `${s.homebrew ? 'Homebrew · ' : ''}${s.level === 0 ? 'Cantrip' : `Level ${s.level}`} · ${s.school}` })),
+    ...shownMonsters.map((m) => ({ category: 'monsters' as const, index: m.index, name: m.name, cr: m.cr, subtitle: `${m.homebrew ? 'Homebrew · ' : ''}CR ${formatCr(m.cr)} · ${m.meta.split(', ')[1]}` })),
+    ...shownSpells.map((s) => ({ category: 'spells' as const, index: s.index, name: s.name, level: s.level, subtitle: `${s.homebrew ? 'Homebrew · ' : ''}${s.level === 0 ? 'Cantrip' : `Level ${s.level}`} · ${s.school}` })),
     ...(items ?? []).map((i) => ({ category: 'magic-items' as const, index: i.index, name: i.name, subtitle: `${i.rarity}${i.rarityNote ? ` (${i.rarityNote})` : ''} · ${i.category}` })),
     ...(equipment ?? []).map((e) => ({ category: 'equipment' as const, index: e.index, name: e.name, subtitle: [e.detail ?? e.category, e.cost].filter(Boolean).join(' · ') })),
     ...rules.map((r) => ({ category: 'rules' as const, index: r.index, name: r.name, subtitle: r.index.startsWith('quick-') ? 'Quick rule' : 'Rules section' })),
@@ -69,8 +85,15 @@ export function Lookup({ edition, state, setState, searchRef, onAddMonster, onHo
     ? []  // "All" needs some search text, or it would list everything
     : all
         .filter((item) => (state.category === 'all' || item.category === state.category) && item.name.toLowerCase().includes(query))
-        // Best matches first: exact name, then names starting with the search, then the rest (ORDER BY CASE ...).
-        .sort((a, b) => matchRank(a.name, query) - matchRank(b.name, query))
+        // Best matches first: exact name, then names starting with the search, then the rest (ORDER BY CASE ...),
+        // then monsters by name or CR and spells by level.
+        .sort((a, b) => matchRank(a.name, query) - matchRank(b.name, query) || thenBy(a, b))
+
+  function thenBy(a: ListItem, b: ListItem): number {
+    if (state.category === 'monsters') return compareMonsters({ name: a.name, cr: a.cr ?? 0 }, { name: b.name, cr: b.cr ?? 0 }, monsterFilters.sort)
+    if (state.category === 'spells') return compareSpells({ name: a.name, level: a.level ?? 0 }, { name: b.name, level: b.level ?? 0 })
+    return 0
+  }
 
   const select = (item: ListItem) => setState({ ...state, selected: { category: item.category, index: item.index } })
   const isSelected = (item: ListItem) => state.selected?.category === item.category && state.selected.index === item.index
@@ -101,9 +124,11 @@ export function Lookup({ edition, state, setState, searchRef, onAddMonster, onHo
           onKeyDown={(e) => e.key === 'Enter' && results[0] && select(results[0])}
           autoFocus
         />
+        {state.category === 'monsters' && monsters && <MonsterFilterBar monsters={monsters} filters={monsterFilters} onChange={setMonsterFilters} />}
+        {state.category === 'spells' && spells && <SpellFilterBar spells={spells} filters={spellFilters} onChange={setSpellFilters} />}
         <ul className="results">
           {state.category === 'all' && query === '' && <li className="hint">Type to search everything.</li>}
-          {state.category !== 'all' && results.length === 0 && <li className="hint">{query ? 'No matches.' : 'Loading…'}</li>}
+          {state.category !== 'all' && results.length === 0 && <li className="hint">{query || filtering ? 'No matches.' : 'Loading…'}</li>}
           {results.map((item) => (
             <li key={`${item.category}/${item.index}`}>
               <button type="button" className={isSelected(item) ? 'selected' : ''} onClick={() => select(item)}>

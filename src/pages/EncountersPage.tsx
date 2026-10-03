@@ -173,6 +173,7 @@ function EncounterEditor({ initial, party }: { initial: Encounter; party: Pc[] }
               </div>
             ))}
             <MonsterPicker
+              filters
               onAdd={(ref) => {
                 const existing = draft.monsters.find((m) => m.index === ref.index && m.edition === ref.edition)
                 if (existing) setCount(existing, existing.count + 1)

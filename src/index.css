@@ -1537,3 +1537,22 @@ button.dice-link {
   cursor: pointer;
 }
 button.dice-link:hover { background: var(--panel-raised); }
+
+/* Filters for the monster and spell lists (Quick Lookup and the encounter builder) */
+.filter-bar { display: flex; flex-direction: column; gap: 0.45rem; }
+.filter-bar-buttons { display: flex; gap: 0.4rem; }
+.filter-bar-buttons button.selected { border-color: var(--gold); color: var(--gold-bright); }
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.4rem 0.6rem;
+  padding: 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.filter-grid label { display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.78rem; color: var(--text-dim); }
+.filter-grid label.checkbox { flex-direction: row; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text); }
+.filter-grid select { width: 100%; font-size: 0.85rem; padding: 0.2em 0.3em; }
+.monster-picker .filter-bar { margin-top: 0.4rem; }
+.monster-picker .results { max-height: 22rem; }
