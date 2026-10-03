@@ -120,9 +120,6 @@ Condition durations, saves waiting above the tracker (save ends and concentratio
 - More generators: weather, travel events, settlements, dungeon dressing and traps
 - Optional: sync between devices, a second-screen view for players (turn order, monster health as "Bloodied")
 
-### To check
-- The three hand-written 2024 magic item tables in `scripts/fixes/2024-magic-items.json` (Potions of Healing, Potion of Giant Strength, Spell Scroll) haven't been compared with the 2024 book yet; every other 2024 table comes from Open5e's copy of SRD 5.2
-
 ## Tech Stack
 
 | Area | Choice |
