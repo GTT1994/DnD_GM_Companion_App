@@ -109,10 +109,19 @@ Names, random encounters by environment, rumours and plot hooks, taverns and sho
 ### Combat quality of life ✅
 Condition durations, saves waiting above the tracker (save ends and concentration), monster saving throw buttons, group saves, the initiative prompt, Undo / Redo, Reset combat, and resistances / immunities / vulnerabilities applied to damage.
 
+### Next: suggested quality of life
+- **Backups and speed**: a "last backup: N days ago" reminder with one-click export on the home page (all data lives in this browser); load pages on demand to shrink the first download (now over 1 MB)
+- **Death saves**: successes and failures for PCs at 0 HP, a reminder on their turn, natural 20 / natural 1 / healing handled
+- **Dice roller everywhere**: a small box on every page for rolls like `3d6+2` or `d20 adv`
+- **⌘K for the campaign**: search NPCs, notes, sessions and encounters as well as the rules
+
 ### Later: All-in-one toolkit
 - Campaign wiki: locations, factions and items, linked to each other and to NPCs
 - More generators: weather, travel events, settlements, dungeon dressing and traps
-- Optional: sync between devices, a second-screen view for players
+- Optional: sync between devices, a second-screen view for players (turn order, monster health as "Bloodied")
+
+### To check
+- The three hand-written 2024 magic item tables in `scripts/fixes/2024-magic-items.json` (Potions of Healing, Potion of Giant Strength, Spell Scroll) haven't been compared with the 2024 book yet; every other 2024 table comes from Open5e's copy of SRD 5.2
 
 ## Tech Stack
 
