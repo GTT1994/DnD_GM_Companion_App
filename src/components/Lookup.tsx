@@ -1,7 +1,7 @@
 // The Quick Lookup page: search conditions, monsters, spells, magic items and rules
 // for the current edition, and show the chosen entry on the right.
 
-import type { RefObject } from 'react'
+import { useState, type RefObject } from 'react'
 import type { Edition, LookupCategory, LookupState } from '../types'
 import { useSrd, type Equipment, type MagicItem, type Monster, type Spell, type TextEntry } from '../data/srd'
 import { quickRulesFor } from '../data/quickRules'
@@ -15,6 +15,7 @@ import { MonsterFilterBar, SpellFilterBar } from './FilterBars'
 import { Markdown } from './Markdown'
 import { StatBlock } from './StatBlock'
 import { SpellDetail } from './SpellDetail'
+import { ScaleMonster } from './ScaleMonster'
 
 const CATEGORY_LABELS: Record<LookupState['category'], string> = {
   all: 'All',
@@ -46,7 +47,8 @@ type LookupProps = {
 }
 
 // The monster or spell a "Make homebrew copy" / "Edit homebrew" button acts on.
-export type HomebrewTarget = { kind: 'monster'; entry: Monster } | { kind: 'spell'; entry: Spell }
+// scaled: a monster scaled to a new CR, always saved as a new homebrew copy.
+export type HomebrewTarget = { kind: 'monster'; entry: Monster; scaled?: boolean } | { kind: 'spell'; entry: Spell }
 
 export function Lookup({ edition, state, setState, searchRef, onAddMonster, onHomebrew }: LookupProps) {
   // Each category loads on first use; null while loading.
@@ -177,14 +179,7 @@ function Detail({ selected, data, onAddMonster, onHomebrew }: DetailProps) {
     case 'monsters': {
       const monster = find(data.monsters)
       if (!monster) return notFound
-      return (
-        <StatBlock
-          key={monster.index}
-          monster={monster}
-          onAdd={(n) => onAddMonster(monster, n)}
-          extra={<HomebrewButton homebrew={monster.homebrew} onClick={() => onHomebrew({ kind: 'monster', entry: monster })} />}
-        />
-      )
+      return <MonsterDetail key={monster.index} monster={monster} onAddMonster={onAddMonster} onHomebrew={onHomebrew} />
     }
     case 'spells': {
       const spell = find(data.spells)
@@ -240,6 +235,28 @@ function Detail({ selected, data, onAddMonster, onHomebrew }: DetailProps) {
       )
     }
   }
+}
+
+// A monster's stat block, with Scale CR (opening the scaling panel above it) and homebrew buttons.
+function MonsterDetail({ monster, onAddMonster, onHomebrew }: { monster: Monster } & Pick<DetailProps, 'onAddMonster' | 'onHomebrew'>) {
+  const [scaling, setScaling] = useState(false)
+  return (
+    <>
+      {scaling && (
+        <ScaleMonster monster={monster} onClose={() => setScaling(false)} onSave={(scaled) => onHomebrew({ kind: 'monster', entry: scaled, scaled: true })} />
+      )}
+      <StatBlock
+        monster={monster}
+        onAdd={(n) => onAddMonster(monster, n)}
+        extra={
+          <>
+            <button type="button" className={scaling ? 'selected' : ''} onClick={() => setScaling(!scaling)}>Scale CR</button>
+            <HomebrewButton homebrew={monster.homebrew} onClick={() => onHomebrew({ kind: 'monster', entry: monster })} />
+          </>
+        }
+      />
+    </>
+  )
 }
 
 // "Edit homebrew" for the GM's own entries, "Make homebrew copy" for SRD ones.

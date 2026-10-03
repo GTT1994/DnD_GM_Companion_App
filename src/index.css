@@ -1578,3 +1578,11 @@ tr.combatant.lair td { background: color-mix(in srgb, var(--panel) 85%, #5a3a8a)
 .mob-attack { display: flex; flex-direction: column; gap: 0.35rem; margin: 0.35rem 0; padding: 0.45rem; border: 1px dashed var(--border); border-radius: 6px; }
 .mob-attack label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-dim); }
 .mob-odds { margin: 0; }
+
+/* Scale CR panel in Quick Lookup */
+.scale-monster { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.scale-controls { display: flex; align-items: flex-end; gap: 0.75rem; flex-wrap: wrap; }
+.scale-controls label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: var(--text-dim); }
+.scale-table th[scope='row'] { text-align: left; font-weight: 600; white-space: nowrap; }
+.scale-table tr.changed td:last-child { color: var(--gold-bright); }
+.scale-monster details .stat-block { margin-top: 0.6rem; }

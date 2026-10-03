@@ -29,6 +29,7 @@ A DnD 5e companion app for Game Masters, for personal use on a laptop. See [READ
 - Dice roller: `components/DiceTray.tsx` (the 🎲 tray around every page, D key); `lib/diceRoller.ts` reads and rolls what's typed and finds dice in text; `lib/remarkDice.ts` makes dice in `<Markdown rollLabel>` clickable through `lib/diceTray.ts` context
 - `src/lib/lookupFilters.ts`: monster and spell list filters (Quick Lookup and the encounter builder's `MonsterPicker filters`); the bars are `components/FilterBars.tsx`
 - `src/lib/lair.ts`: lairs in the fight (a combatant with `lair` set: no HP, `LairPanel` instead of `MonsterPanel`, excluded from targets via `creatures()`) and in-lair use counts; `mob.ts` for the DMG mob attack table (`components/MobAttack.tsx`)
+- `src/lib/scaleMonster.ts`: Scale CR (the DMG stats-by-CR table; numbers move by the difference between rows, HP and damage by the ratio); `components/ScaleMonster.tsx` is the panel in Quick Lookup
 - `src/lib/conditions.ts`: condition timers (run by `combatReducer` on each turn change) and the duration form; `saves.ts` for save bonuses, rolls and damage after a save
 - `src/lib/encounters.ts`: encounter difficulty (2014 thresholds/multipliers, 2024 budgets) and loading encounters into combat
 - `src/lib/homebrew.ts`: homebrew conversions (base + per-level dice → SRD-style tables), SRD copies, checks before saving

@@ -12,10 +12,11 @@ export function LookupPage() {
   const { combatId } = useCampaignRoute()
   const navigate = useNavigate()
 
-  // Homebrew entries open in the editor; SRD ones are copied into homebrew first (tagged with this edition).
+  // Homebrew entries open in the editor; SRD ones (and monsters scaled to a new CR) are copied into
+// homebrew first (tagged with this edition).
   async function homebrew(target: HomebrewTarget) {
     let index = target.entry.index
-    if (!target.entry.homebrew && target.kind === 'monster') {
+    if (target.kind === 'monster' && (target.scaled || !target.entry.homebrew)) {
       const copy = copyMonster(target.entry, edition)
       await saveMonster(copy)
       index = copy.index

@@ -62,6 +62,7 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 **Quick lookup** (press **⌘K** anywhere)
 - Search conditions, monsters, spells, magic items, equipment (with prices, damage and armour class) and rules, or all of them at once
 - Full monster stat blocks with **Add to combat** (each monster rolls its own initiative)
+- **Scale CR** on any stat block: pick a new challenge rating and see AC, HP, attacks, damage and save DCs before and after (using the DMG's stats by CR, moved relative to the monster's own numbers so it keeps its character), preview the full stat block, and **Save as homebrew**, e.g. "Ogre (CR 5)"
 - **Monster filters**: CR range, type, size, environment, legendary, homebrew, and resistant / immune / vulnerable to a damage type; sort by name or CR
 - **Spell filters**: class, level, school, casting time (action / bonus action / reaction / longer), spell attack or save (and which ability), damage type, concentration and ritual; sorted by level
 - Quick rules for the things GMs look up most (cover, DCs, exhaustion, grappling, travel pace…), plus the full SRD rules sections for 2014
@@ -124,10 +125,10 @@ Condition durations, saves waiting above the tracker (save ends and concentratio
 ### Dice roller ✅
 A dice tray on every page (🎲 or the D key) with advantage, keep highest / lowest, quick dice, favourites and history; dice in Quick Lookup text roll in it.
 
-### Monster tools (in progress)
+### Monster tools ✅
 - Monster and spell filters ✅
 - Lair actions (typed in for the fight, initiative 20) and mob attacks (the DMG's hits-per-attackers table) ✅
-- Scale a monster to a new CR, saved as a homebrew copy
+- Scale a monster to a new CR, saved as a homebrew copy ✅
 
 ### Next: suggested quality of life
 - **Backups and speed**: a "last backup: N days ago" reminder with one-click export on the home page (all data lives in this browser); load pages on demand to shrink the first download (now over 1 MB)
@@ -172,6 +173,8 @@ npm run srd    # re-download the SRD data into src/data/srd/
 
 ## Known limitations
 
+- **Scale CR** uses the 2014 DMG's stats-by-CR table for both editions, and scales relative to the monster: a monster with low HP for its CR stays low at the new CR (an Ogre at CR 5 gets 85 HP, not the table's 131–145). Traits, ability scores and spell lists aren't changed; adjust them in the editor
+- **Lair actions** aren't in the SRD data, so they're typed in for each fight
 - **Encounter difficulty tables** (2014 XP thresholds and multipliers, 2024 XP budgets) were entered by hand in `src/lib/encounters.ts`, because they aren't in the SRD data source. Check them against your books.
 - **Quick rules** (`src/data/quickRules.ts`) are a hand-written summary, not official text. The 2024 data has no full rules sections, so only the quick rules show in 2024 mode.
 - **Loot tables** are simplified, not the official treasure tables. Magic items come from the SRD.
