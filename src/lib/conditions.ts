@@ -118,6 +118,22 @@ export function timerLabel(timer: ConditionTimer, self: Combatant, combatants: C
   }
 }
 
+// Short chip text for the tracker: "Concentrating: Fly" → "Conc: Fly", "Resistant: Fire" → "Res: Fire".
+export function shortConditionName(name: string): string {
+  return name
+    .replace(/^Concentrating: /, 'Conc: ')
+    .replace(/^Resistant: /, 'Res: ')
+    .replace(/^Immune: /, 'Imm: ')
+    .replace(/^Vulnerable: /, 'Vuln: ')
+}
+
+// The small badge on a timed chip: rounds left, ▸ for "until a turn starts / ends", S for save ends.
+// The full wording (timerLabel) is in the chip's hover text.
+export function timerBadge(timer: ConditionTimer): string {
+  if (timer.kind === 'rounds') return `${timer.rounds}`
+  return timer.kind === 'turn' ? '▸' : 'S'
+}
+
 // --- The duration form -----------------------------------------------------------------
 
 // What the duration fields hold while being filled in (text boxes stay text until used).

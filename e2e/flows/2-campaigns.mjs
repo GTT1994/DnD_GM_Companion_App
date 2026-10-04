@@ -22,11 +22,11 @@ export default async function ({ page, base, shot, shotsDir }) {
   // Add party, take damage, see it on the Overview.
   await page.getByRole('link', { name: 'Combat', exact: true }).click()
   await page.getByRole('button', { name: 'Add party' }).click()
-  await page.locator('tr.combatant').nth(1).waitFor()
+  await page.locator('tbody.combatant').nth(1).waitFor()
   await page.getByRole('button', { name: '+ Add combatant' }).click()  // closed now the party is in the fight
   assert.equal(await page.locator('.add-form input[type=checkbox]').isChecked(), false, 'Player should start unticked in a campaign')
   await page.getByRole('button', { name: 'Close add combatant' }).click()
-  const thorin = page.locator('tr.combatant', { hasText: 'Thorin' })
+  const thorin = page.locator('tbody.combatant', { hasText: 'Thorin' })
   await thorin.locator('.amount-input').fill('10')
   await thorin.locator('.amount-input').press('Enter')
   await thorin.getByText('34 / 44').waitFor()

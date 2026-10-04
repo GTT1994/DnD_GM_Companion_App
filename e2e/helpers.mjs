@@ -35,7 +35,7 @@ export async function addCombatant(page, { name, initiative = '', hp, ac, player
   const box = form.locator('input[type=checkbox]')
   if ((await box.isChecked()) !== player) await box.click()
   await form.getByLabel('Name').press('Enter')
-  await page.locator('tr.combatant', { hasText: name }).first().waitFor()
+  await page.locator('tbody.combatant', { hasText: name }).first().waitFor()
 }
 
 // Creates a campaign from the home page and returns its address.
@@ -65,7 +65,7 @@ export const select = (scope, text) => scope.locator('label').filter({ hasText: 
 
 // Each tracker row as { name, initiative, hp }.
 export function trackerRows(page) {
-  return page.locator('tr.combatant').evaluateAll((trs) => trs.map((tr) => ({
+  return page.locator('tbody.combatant').evaluateAll((trs) => trs.map((tr) => ({
     name: tr.querySelector('.name-cell button, .name-cell')?.firstChild?.textContent?.trim(),
     initiative: tr.querySelector('.init-input')?.value,
     hp: tr.querySelector('.hp-text')?.textContent?.trim(),
@@ -85,4 +85,18 @@ export async function startCombat(page) {
 export async function moreMenu(page, label) {
   await page.getByRole('button', { name: 'More ▾' }).click()
   await page.getByRole('menuitem', { name: label }).click()
+}
+
+// Opens a tracker row's "+ Condition" pop-up and picks a condition; returns the pop-up.
+export async function pickCondition(row, condition) {
+  await row.getByRole('button', { name: /^Add condition to/ }).click()
+  const popover = row.locator('.condition-popover')
+  await popover.getByLabel('Condition', { exact: true }).selectOption(condition)
+  return popover
+}
+
+// Opens a tracker row's ⋯ menu (temp HP, damage type, remove); returns the menu.
+export async function rowMenu(row) {
+  await row.getByRole('button', { name: /^More for/ }).click()
+  return row.locator('.row-menu')
 }

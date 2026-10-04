@@ -1,7 +1,7 @@
 // The initiative prompt at Start combat, Undo / Redo (buttons and ⌘Z / ⇧⌘Z, including PC HP on
 // the party cards), and Reset combat from the More menu (and undoing it).
 
-import { addMonster, addPc, assert, createCampaign, moreMenu, trackerRows } from '../helpers.mjs'
+import { addMonster, addPc, assert, createCampaign, moreMenu, pickCondition, trackerRows } from '../helpers.mjs'
 
 export default async function ({ page, base, shot }) {
   const campaignUrl = await createCampaign(page, base, 'Undo Test')
@@ -10,7 +10,7 @@ export default async function ({ page, base, shot }) {
   await addMonster(page, campaignUrl, '2024', 'goblin warrior')  // the campaign's Lookup adds to its fight
   await page.goto(`${campaignUrl}/combat`)
   await page.getByRole('button', { name: 'Add party' }).click()
-  await page.locator('tr.combatant').nth(2).waitFor()
+  await page.locator('tbody.combatant').nth(2).waitFor()
   const initiativeOf = async (name) => (await trackerRows(page)).find((r) => r.name === name)?.initiative
   const thorinBefore = await initiativeOf('Thorin')
 
@@ -25,7 +25,7 @@ export default async function ({ page, base, shot }) {
   assert.ok(jazzRoll >= 1 && jazzRoll <= 20, 'Jazz rolled a d20')
   await shot('initiative-prompt')
   await prompt.getByLabel('Initiative for Thorin').press('Enter')
-  await page.locator('tr.combatant.active', { hasText: 'Thorin' }).waitFor()  // 25 beats any goblin roll
+  await page.locator('tbody.combatant.active', { hasText: 'Thorin' }).waitFor()  // 25 beats any goblin roll
   assert.equal(await initiativeOf('Jazz'), String(jazzRoll))
 
   // Undo the start (one step, rolls included), then redo it, with the keyboard.
@@ -41,7 +41,7 @@ export default async function ({ page, base, shot }) {
   assert.equal(await initiativeOf('Thorin'), '25')
 
   // Damage to a PC: Undo also puts the party card's HP back.
-  const thorin = page.locator('tr.combatant', { hasText: 'Thorin' })
+  const thorin = page.locator('tbody.combatant', { hasText: 'Thorin' })
   await thorin.locator('.amount-input').fill('10')
   await thorin.locator('.amount-input').press('Enter')
   await thorin.getByText('20 / 30').waitFor()
@@ -54,13 +54,13 @@ export default async function ({ page, base, shot }) {
 
   // Reset combat: hurt the goblin, give it a condition, move on a turn, then reset.
   await page.getByRole('link', { name: 'Combat', exact: true }).click()
-  const goblin = page.locator('tr.combatant', { hasText: 'Goblin' })
+  const goblin = page.locator('tbody.combatant', { hasText: 'Goblin' })
   await goblin.locator('.amount-input').fill('3')
   await goblin.locator('.amount-input').press('Enter')
-  await goblin.locator('.condition-select').selectOption('Prone')
+  await pickCondition(goblin, 'Prone')
   await goblin.locator('.condition-popover').getByRole('button', { name: 'Add' }).click()
   await page.getByRole('button', { name: /Next turn/ }).click()
-  await page.locator('tr.combatant.active', { hasText: 'Thorin' }).waitFor({ state: 'detached' })
+  await page.locator('tbody.combatant.active', { hasText: 'Thorin' }).waitFor({ state: 'detached' })
   await moreMenu(page, 'Reset combat')
   await page.locator('.round', { hasText: 'Not started' }).waitFor()
   const rows = await trackerRows(page)

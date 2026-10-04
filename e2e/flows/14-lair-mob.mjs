@@ -16,7 +16,7 @@ export default async function ({ page, base, shot }) {
   await form.getByLabel('Name').fill('Goblin cave')
   await form.getByLabel(/Lair actions/).fill('Rocks fall from the ceiling\nSmoke fills the tunnel')
   await form.getByRole('button', { name: 'Add lair', exact: true }).click()
-  await page.locator('tr.lair', { hasText: 'Goblin cave' }).waitFor()
+  await page.locator('tbody.lair', { hasText: 'Goblin cave' }).waitFor()
   const names = (await trackerRows(page)).map((r) => r.name)
   assert.equal(names.indexOf('Goblin cave'), names.indexOf('Thorin') + 1)
 
@@ -38,7 +38,7 @@ export default async function ({ page, base, shot }) {
   const action = (text) => panel.locator('.lair-action', { hasText: text })
   await action('Rocks fall').getByRole('button', { name: 'Use' }).click()
   await action('Rocks fall').getByRole('button', { name: '✓ Used this round' }).waitFor()
-  assert.match(await page.locator('tr.lair .lair-summary').innerText(), /round 1\): Rocks fall/)
+  assert.match(await page.locator('tbody.lair .lair-summary').innerText(), /round 1\): Rocks fall/)
   await shot('lair-panel')
 
   // Next round the same action can't be used, the other can.
@@ -48,7 +48,7 @@ export default async function ({ page, base, shot }) {
   await action('Smoke').getByRole('button', { name: 'Use' }).click()
 
   // Mob attack: 4 goblins (+4 to hit) against AC 13 need a 9 → 1 hit per 2 → 2 hits.
-  await page.locator('tr.combatant .name-cell button', { hasText: /^Goblin$/ }).click()
+  await page.locator('tbody.combatant .name-cell button', { hasText: /^Goblin$/ }).click()
   const scimitar = page.locator('.monster-panel .action-card', { hasText: 'Scimitar' })
   await scimitar.getByRole('button', { name: 'Mob attack' }).click()
   const mob = scimitar.locator('.mob-attack')
@@ -66,7 +66,7 @@ export default async function ({ page, base, shot }) {
   // In its lair, a 2024 adult dragon gets 4 Legendary Resistance uses instead of 3.
   await addMonster(page, base, '2024', 'adult red dragon')
   await page.goto(`${base}/quick-combat`)
-  await page.locator('tr.combatant .name-cell button', { hasText: 'Adult Red Dragon' }).click()
+  await page.locator('tbody.combatant .name-cell button', { hasText: 'Adult Red Dragon' }).click()
   const pips = page.locator('.monster-panel .pips[aria-label^="Legendary Resistance"]')
   await page.locator('.monster-panel details.traits summary').click()
   assert.equal(await pips.locator('.pip').count(), 3)

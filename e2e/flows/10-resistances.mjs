@@ -2,7 +2,7 @@
 // Earth Elemental's tags and typed damage (nonmagical resistance, Magical tick-box, vulnerability),
 // the condition immunity warning, a temporary resistance, and group saves adjusted per target.
 
-import { addMonster, assert, createCampaign, select, startCombat } from '../helpers.mjs'
+import { addMonster, assert, createCampaign, pickCondition, rowMenu, select, startCombat } from '../helpers.mjs'
 
 export default async function ({ page, base, shot }) {
   const campaignUrl = await createCampaign(page, base, 'Elements')
@@ -21,21 +21,27 @@ export default async function ({ page, base, shot }) {
   await addMonster(page, campaignUrl, '2024', 'red dragon wyrmling')
   await page.goto(`${campaignUrl}/combat`)
   await page.getByRole('button', { name: 'Add party' }).click()
-  await page.locator('tr.combatant').nth(2).waitFor()
+  await page.locator('tbody.combatant').nth(2).waitFor()
 
   // The elemental's tags; * marks "nonmagical only".
-  const elemental = page.locator('tr.combatant', { hasText: 'Earth Elemental' })
+  const elemental = page.locator('tbody.combatant', { hasText: 'Earth Elemental' })
   assert.deepEqual(await elemental.locator('.defense-tag').allInnerTexts(), ['Res bludgeoning*, piercing*, slashing*', 'Imm poison', 'Vuln thunder'])
   const hp = async () => (await elemental.locator('.hp-text').innerText()).match(/^(\d+)/)[1]
 
   // Typed damage: 20 nonmagical slashing is halved; with Magical ticked it isn't; thunder doubles.
   async function hit(amount, type, magical = false) {
     await elemental.locator('.amount-input').fill(String(amount))
-    await elemental.getByLabel('Damage type for Earth Elemental').selectOption(type)
-    if (magical) await elemental.getByLabel('Magical').check()
+    // The damage type is in the row's ⋯ menu; clicking back in the HP box closes it.
+    const menu = await rowMenu(elemental)
+    await menu.getByLabel('Damage type for Earth Elemental').selectOption(type)
+    if (magical) await menu.getByLabel('Magical').check()
+    if (magical) await shot('row-menu')
+    await elemental.locator('.amount-input').click()
+    await menu.waitFor({ state: 'detached' })
   }
   await hit(20, 'Slashing')
   assert.equal(await elemental.locator('button.damage').innerText(), 'Dmg 10 (½ slashing)')
+  assert.equal(await elemental.locator('.type-tag').innerText(), 'slashing ✕')  // shown beside the HP box
   await elemental.locator('button.damage').click()
   await elemental.getByText('116 / 126').waitFor()
   await hit(10, 'Slashing', true)
@@ -45,20 +51,20 @@ export default async function ({ page, base, shot }) {
   await hit(5, 'Thunder')
   await elemental.locator('.amount-input').press('Enter')
   await elemental.getByText('96 / 126').waitFor()
-  assert.equal(await elemental.getByLabel('Damage type for Earth Elemental').inputValue(), '', 'type resets after each hit')
+  assert.equal(await elemental.locator('.type-tag').count(), 0, 'type resets after each hit')
   assert.equal(await hp(), '96')
 
   // Poisoned: the elemental is immune, so there's a warning.
-  await elemental.locator('.condition-select').selectOption('Poisoned')
+  await pickCondition(elemental, 'Poisoned')
   await elemental.locator('.condition-popover .field-error', { hasText: 'immune to Poisoned' }).waitFor()
   await elemental.locator('.condition-popover').getByRole('button', { name: 'Cancel' }).click()
 
   // A temporary resistance on Thorin (e.g. Absorb Elements).
-  const thorin = page.locator('tr.combatant', { hasText: 'Thorin' })
-  await thorin.locator('.condition-select').selectOption({ label: 'Resistant…' })
+  const thorin = page.locator('tbody.combatant', { hasText: 'Thorin' })
+  await pickCondition(thorin, { label: 'Resistant…' })
   await thorin.locator('.condition-popover').getByLabel('Damage type').selectOption('Cold')
   await thorin.locator('.condition-popover').getByRole('button', { name: 'Add' }).click()
-  await thorin.locator('.chip', { hasText: 'Resistant: Cold' }).waitFor()
+  await thorin.locator('.chip', { hasText: 'Res: Cold' }).waitFor()
   assert.equal(await thorin.locator('.defense-tag').innerText(), 'Res fire, cold')
   await shot('resistances')
 
@@ -66,7 +72,7 @@ export default async function ({ page, base, shot }) {
   await startCombat(page)
   // Its panel may already be open if it won initiative (the panel follows the turn).
   if (!(await page.locator('.monster-panel h2', { hasText: 'Red Dragon Wyrmling' }).count())) {
-    await page.locator('tr.combatant', { hasText: 'Red Dragon Wyrmling' }).locator('button.link').click()
+    await page.locator('tbody.combatant', { hasText: 'Red Dragon Wyrmling' }).locator('button.link').click()
   }
   const breath = page.locator('.monster-panel .action-card', { has: page.locator('.action-title strong', { hasText: 'Fire Breath' }) })
   await breath.getByRole('button', { name: 'Group save' }).click()
@@ -93,6 +99,6 @@ export default async function ({ page, base, shot }) {
   assert.match(await rowFor('Earth Elemental').locator('.group-amount').innerText(), /^20 dmg · immune to Paralyzed$/)
   await group.getByRole('button', { name: 'Apply' }).click()
   await elemental.getByText('76 / 126').waitFor()
-  await page.locator('tr.combatant', { hasText: 'Red Dragon Wyrmling' }).locator('.chip', { hasText: 'Paralyzed' }).waitFor()
+  await page.locator('tbody.combatant', { hasText: 'Red Dragon Wyrmling' }).locator('.chip', { hasText: 'Paralyzed' }).waitFor()
   assert.equal(await elemental.locator('.chip', { hasText: 'Paralyzed' }).count(), 0)
 }

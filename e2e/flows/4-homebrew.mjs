@@ -76,7 +76,7 @@ export default async function ({ page, base, shot, shotsDir }) {
 
   // Roll the homebrew attack and spell in combat.
   await page.goto(`${base}/quick-combat`)
-  await page.locator('tr.combatant', { hasText: 'Goblin Warlord' }).locator('button.link').click()
+  await page.locator('tbody.combatant', { hasText: 'Goblin Warlord' }).locator('button.link').click()
   const panel = page.locator('.monster-panel')
   const swordCard = panel.locator('.action-card', { has: page.locator('.action-title strong', { hasText: 'Fire Sword' }) })
   await swordCard.locator('.damage-parts input').first().waitFor()  // wait for the panel to draw

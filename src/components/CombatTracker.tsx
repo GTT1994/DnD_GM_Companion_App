@@ -199,12 +199,10 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
                   <th>Name</th>
                   <th>AC</th>
                   <th>HP</th>
-                  <th>Conditions</th>
-                  <th>Actions</th>
+                  <th className="actions-heading">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {/* One row per combatant, highest initiative first */}
+              {/* One <tbody> per combatant (two lines each), highest initiative first */}
                 {order.map((c) => (
                   <CombatantRow
                     key={c.id}
@@ -220,7 +218,6 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
                     onSelect={() => select(c.id === selectedId ? null : c.id)}
                   />
                 ))}
-              </tbody>
             </table>
           )}
         </div>

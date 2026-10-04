@@ -50,8 +50,8 @@ export default async function ({ page, base, shot }) {
   await page.getByRole('link', { name: 'Generators' }).click()
   await page.locator('.random-encounter').first().getByRole('button', { name: 'Load into combat' }).click()
   await page.waitForURL(/\/combat$/)
-  await page.locator('tr.combatant', { hasText: 'Thorin' }).waitFor()
-  assert.ok((await page.locator('tr.combatant.monster').count()) >= 1)
+  await page.locator('tbody.combatant', { hasText: 'Thorin' }).waitFor()
+  assert.ok((await page.locator('tbody.combatant.monster').count()) >= 1)
 
   // Rumours into the plan, a hook into the notes.
   await page.getByRole('link', { name: 'Generators' }).click()

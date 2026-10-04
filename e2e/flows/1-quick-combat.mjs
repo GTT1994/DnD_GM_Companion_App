@@ -1,7 +1,7 @@
 // Quick combat basics: adding combatants, turn order, damage/temp HP/healing, conditions,
 // saving across a refresh, Quick Lookup search and rules, and the generators.
 
-import { addCombatant, addMonster, assert, startCombat, trackerRows } from '../helpers.mjs'
+import { addCombatant, addMonster, assert, pickCondition, rowMenu, startCombat, trackerRows } from '../helpers.mjs'
 
 export default async function ({ page, base, shot }) {
   await page.goto(`${base}/quick-combat`)
@@ -14,7 +14,7 @@ export default async function ({ page, base, shot }) {
   const form = page.locator('.add-form')
   await form.getByLabel('Name').fill('Nobody')
   await form.getByRole('button', { name: 'Add' }).click()
-  assert.equal(await page.locator('tr.combatant').count(), 2, 'invalid combatant should not be added')
+  assert.equal(await page.locator('tbody.combatant').count(), 2, 'invalid combatant should not be added')
   await form.getByLabel('Name').fill('')
 
   // The form was open because the fight was empty; ✕ closes it, the toolbar button brings it back.
@@ -48,13 +48,13 @@ export default async function ({ page, base, shot }) {
 
   // Turn order and HP.
   await page.goto(`${base}/quick-combat`)
-  await page.locator('tr.combatant').nth(3).waitFor()
+  await page.locator('tbody.combatant').nth(3).waitFor()
   await startCombat(page)
   await page.locator('.round', { hasText: 'Round 1' }).waitFor()
 
-  const thorin = page.locator('tr.combatant', { hasText: 'Thorin' })
+  const thorin = page.locator('tbody.combatant', { hasText: 'Thorin' })
   await thorin.locator('.amount-input').fill('5')
-  await thorin.getByRole('button', { name: 'Temp' }).click()
+  await (await rowMenu(thorin)).getByRole('button', { name: 'Set temp HP to 5' }).click()
   await thorin.locator('.amount-input').fill('8')
   await thorin.locator('.amount-input').press('Enter')  // Enter = damage
   await thorin.getByText('31').waitFor()
@@ -63,13 +63,13 @@ export default async function ({ page, base, shot }) {
   await thorin.getByRole('button', { name: 'Heal' }).click()
   await thorin.getByText('34 / 34').waitFor()
 
-  await thorin.locator('.condition-select').selectOption('Prone')
+  await pickCondition(thorin, 'Prone')
   await thorin.locator('.condition-popover').getByRole('button', { name: 'Add' }).click()  // "Until removed"
   await thorin.locator('.chip', { hasText: 'Prone' }).waitFor()
 
   // Everything survives a refresh.
   await page.reload()
-  await page.locator('tr.combatant').nth(3).waitFor()
+  await page.locator('tbody.combatant').nth(3).waitFor()
   assert.equal((await trackerRows(page)).length, 4)
   assert.match(await page.locator('.round').innerText(), /Round 1/)
   await shot('quick-combat')

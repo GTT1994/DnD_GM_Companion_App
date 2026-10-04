@@ -1,14 +1,16 @@
-// Adding a condition with a duration: the "+ Condition" drop-down on each tracker row opens a
-// small form for how long it lasts. It also adds temporary damage defences ("Resistant: Fire" for
-// Rage or Absorb Elements), and warns about conditions the creature is immune to.
+// Adding a condition with a duration: the "+ Condition" button on each tracker row opens a
+// pop-up to pick the condition and how long it lasts. It also adds temporary damage defences
+// ("Resistant: Fire" for Rage or Absorb Elements), and warns about conditions the creature is immune to.
 // The duration fields are also used by the group save.
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { Ability, Combatant, ConditionTimer } from '../types'
 import { blankDuration, toTimer, type DurationDraft } from '../lib/conditions'
 import { ABILITIES } from '../lib/saves'
 import { DAMAGE_TYPES } from '../lib/homebrew'
 import { DEFENSE_LABELS, DEFENSES, temporaryCondition, type Defense } from '../lib/resistances'
+import { anchorTo, type Anchor } from '../lib/popover'
+import { Popover } from './Popover'
 
 type DurationFieldsProps = {
   value: DurationDraft
@@ -60,8 +62,10 @@ type ConditionPickerProps = {
 
 const DEFENSE_PREFIX = 'defense:'  // drop-down values for "Resistant…", "Immune…", "Vulnerable…"
 
-// "+ Condition" drop-down; picking one opens the duration form, with Add and Cancel.
+// A small "+ Condition" button that opens a pop-up: pick the condition, how long it lasts, Add.
 export function ConditionPicker({ self, available, combatants, defaultOwnerId, immuneTo = [], onAdd }: ConditionPickerProps) {
+  const button = useRef<HTMLButtonElement>(null)
+  const [at, setAt] = useState<Anchor | null>(null)  // where the pop-up is; null = closed
   const [condition, setCondition] = useState('')
   const [damageType, setDamageType] = useState('Fire')  // for a temporary defence
   const [duration, setDuration] = useState(() => blankDuration(defaultOwnerId))
@@ -70,57 +74,56 @@ export function ConditionPicker({ self, available, combatants, defaultOwnerId, i
   const name = defense ? temporaryCondition(defense, damageType) : condition
   const immune = immuneTo.some((c) => c.toLowerCase() === condition.toLowerCase())
 
+  function open() {
+    setCondition('')
+    setDuration(blankDuration(defaultOwnerId))
+    setAt(anchorTo(button.current!, 'left'))
+  }
+
   function add() {
     if (!condition || timer === null) return
     onAdd(name, timer)
-    setCondition('')
-    setDuration(blankDuration(defaultOwnerId))
+    setAt(null)
   }
 
   return (
     <>
-      <select
-        className="condition-select"
-        value=""
+      <button
+        ref={button}
+        type="button"
+        className={`add-condition ${at ? 'selected' : ''}`}
         aria-label={`Add condition to ${self.name}`}
-        onChange={(e) => {
-          setCondition(e.target.value)
-          setDuration(blankDuration(defaultOwnerId))
-        }}
+        aria-expanded={!!at}
+        onClick={() => (at ? setAt(null) : open())}
       >
-        <option value="">+ Condition</option>
-        {available.map((n) => <option key={n}>{n}</option>)}
-        <optgroup label="Damage defences">
-          {DEFENSES.map((d) => <option key={d} value={`${DEFENSE_PREFIX}${d}`}>{DEFENSE_LABELS[d]}…</option>)}
-        </optgroup>
-      </select>
-      {condition && (
-        <div
-          className="condition-popover"
-          role="dialog"
-          aria-label={`${defense ? DEFENSE_LABELS[defense] : condition} on ${self.name}`}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') add()
-            if (e.key === 'Escape') setCondition('')
-          }}
-        >
-          {defense ? (
-            <label className="defense-type">
-              <strong>{DEFENSE_LABELS[defense]} to</strong>
-              <select value={damageType} onChange={(e) => setDamageType(e.target.value)} aria-label="Damage type">
-                {DAMAGE_TYPES.map((t) => <option key={t}>{t}</option>)}
-              </select>
-            </label>
-          ) : (
-            <strong>{condition}</strong>
-          )}
-          {immune && <span className="field-error">{self.name} is immune to {condition} (stat block). Add anyway?</span>}
-          <DurationFields value={duration} onChange={setDuration} combatants={combatants} selfId={self.id} />
-          <div className="popover-buttons">
-            <button type="button" className="primary small" onClick={add} disabled={timer === null}>Add</button>
-            <button type="button" className="small" onClick={() => setCondition('')}>Cancel</button>
+        + Condition
+      </button>
+      {at && (
+        <Popover at={at} align="left" label={`Add condition to ${self.name}`} className="condition-popover" opener={button} onClose={() => setAt(null)}>
+          <div onKeyDown={(e) => e.key === 'Enter' && add()} className="condition-popover-body">
+            <select value={condition} onChange={(e) => setCondition(e.target.value)} aria-label="Condition" autoFocus>
+              <option value="">Choose a condition…</option>
+              {available.map((n) => <option key={n}>{n}</option>)}
+              <optgroup label="Damage defences">
+                {DEFENSES.map((d) => <option key={d} value={`${DEFENSE_PREFIX}${d}`}>{DEFENSE_LABELS[d]}…</option>)}
+              </optgroup>
+            </select>
+            {defense && (
+              <label className="defense-type">
+                <strong>{DEFENSE_LABELS[defense]} to</strong>
+                <select value={damageType} onChange={(e) => setDamageType(e.target.value)} aria-label="Damage type">
+                  {DAMAGE_TYPES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </label>
+            )}
+            {immune && <span className="field-error">{self.name} is immune to {condition} (stat block). Add anyway?</span>}
+            {condition && <DurationFields value={duration} onChange={setDuration} combatants={combatants} selfId={self.id} />}
+            <div className="popover-buttons">
+              <button type="button" className="primary small" onClick={add} disabled={!condition || timer === null}>Add</button>
+              <button type="button" className="small" onClick={() => setAt(null)}>Cancel</button>
+            </div>
           </div>
-        </div>
+        </Popover>
       )}
     </>
   )

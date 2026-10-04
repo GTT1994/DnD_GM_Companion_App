@@ -53,11 +53,11 @@ export default async function ({ page, base, shot, shotsDir }) {
   await shot('npc-page')
 
   await page.getByRole('link', { name: 'Go to combat' }).click()
-  await page.locator('tr.combatant').nth(1).waitFor()
-  const names = await page.locator('tr.combatant .name-cell button.link').allInnerTexts()
+  await page.locator('tbody.combatant').nth(1).waitFor()
+  const names = await page.locator('tbody.combatant .name-cell button.link').allInnerTexts()
   assert.deepEqual(names.sort(), ['Captain Vex', 'Captain Vex 2'])
   // Her name opens the Bandit Captain's actions.
-  await page.locator('tr.combatant', { hasText: 'Captain Vex 2' }).locator('button.link').click()
+  await page.locator('tbody.combatant', { hasText: 'Captain Vex 2' }).locator('button.link').click()
   await page.locator('.monster-panel .action-card').first().waitFor()
 
   // A generated-style NPC typed quickly, leaving the page straight away: still saved.

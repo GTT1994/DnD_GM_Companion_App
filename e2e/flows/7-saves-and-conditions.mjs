@@ -1,7 +1,7 @@
 // Condition durations (rounds, start/end of someone's turn, save ends), the saves waiting above the
 // tracker (concentration too), monster save buttons, and group saves with damage and conditions.
 
-import { addCombatant, addMonster, assert, moreMenu, select, startCombat } from '../helpers.mjs'
+import { addCombatant, addMonster, assert, moreMenu, pickCondition, select, startCombat } from '../helpers.mjs'
 
 export default async function ({ page, base, shot }) {
   await page.goto(base)
@@ -10,8 +10,8 @@ export default async function ({ page, base, shot }) {
   await page.goto(`${base}/quick-combat`)
   await addCombatant(page, { name: 'Thorin', initiative: 30, hp: 200, ac: 18 })
   await addCombatant(page, { name: 'Jazz', initiative: 25, hp: 200, ac: 14 })
-  const row = (name) => page.locator('tr.combatant', { has: page.locator('.name-cell', { hasText: new RegExp(`^${name}`) }) }).filter({ hasNotText: `${name} 2` })
-  const rowExact = (name) => page.locator('tr.combatant').filter({ has: page.locator('.name-cell button.link, .name-cell', { hasText: name }) })
+  const row = (name) => page.locator('tbody.combatant', { has: page.locator('.name-cell', { hasText: new RegExp(`^${name}`) }) }).filter({ hasNotText: `${name} 2` })
+  const rowExact = (name) => page.locator('tbody.combatant').filter({ has: page.locator('.name-cell button.link, .name-cell', { hasText: name }) })
   // Fixed turn order: Thorin 30, Jazz 25, Goblin Boss 20, Goblin Boss 2 15, Adult Red Dragon 10.
   for (const [name, init] of [['Goblin Boss 2', 15], ['Adult Red Dragon', 10]]) {
     await rowExact(name).locator('.init-input').fill(String(init))
@@ -19,14 +19,14 @@ export default async function ({ page, base, shot }) {
   }
   await row('Goblin Boss').locator('.init-input').fill('20')
   await row('Goblin Boss').locator('.init-input').press('Enter')
-  await page.waitForFunction(() => [...document.querySelectorAll('tr.combatant .name-cell')].map((c) => c.textContent).join('|').match(/Thorin.*Jazz.*Goblin Boss.*Goblin Boss 2.*Adult Red Dragon/))
+  await page.waitForFunction(() => [...document.querySelectorAll('tbody.combatant .name-cell')].map((c) => c.textContent).join('|').match(/Thorin.*Jazz.*Goblin Boss.*Goblin Boss 2.*Adult Red Dragon/))
 
   await startCombat(page)
-  await page.locator('tr.combatant.active', { hasText: 'Thorin' }).waitFor()
+  await page.locator('tbody.combatant.active', { hasText: 'Thorin' }).waitFor()
 
   // Adds a condition with a duration through the row's "+ Condition" form.
   async function addCondition(target, condition, setDuration) {
-    await target.locator('.condition-select').selectOption(condition)
+    await pickCondition(target, condition)
     const popover = target.locator('.condition-popover')
     await setDuration?.(popover)
     await popover.getByRole('button', { name: 'Add' }).click()
@@ -46,9 +46,27 @@ export default async function ({ page, base, shot }) {
     await p.getByLabel('Save ability').selectOption('Wis')
     await p.getByLabel('Save DC').fill('15')
   })
-  assert.match(await row('Goblin Boss').locator('.chip').innerText(), /Restrained · 1 rd/)
-  assert.match(await rowExact('Goblin Boss 2').locator('.chip').innerText(), /Stunned · end of Thorin's turn/)
-  assert.match(await row('Jazz').locator('.chip').innerText(), /Paralyzed · Wis 15 ends/)
+  // Chips show a short badge (1 round, ▸ until a turn, S save ends); the full wording is on hover.
+  const chip = (target) => target.locator('.chip')
+  assert.equal(await chip(row('Goblin Boss')).textContent(), 'Restrained1')
+  assert.match(await chip(row('Goblin Boss')).getAttribute('title'), /^Restrained · 1 rd/)
+  assert.match(await chip(rowExact('Goblin Boss 2')).getAttribute('title'), /^Stunned · end of Thorin's turn/)
+  assert.equal(await chip(rowExact('Goblin Boss 2')).locator('.chip-badge').innerText(), '▸')
+  assert.match(await chip(row('Jazz')).getAttribute('title'), /^Paralyzed · Wis 15 ends/)
+  assert.equal(await chip(row('Jazz')).locator('.chip-badge').innerText(), 'S')
+
+  // Every row's Dmg button lines up, whatever conditions the rows have, with the panel closed or open.
+  const lined = async () => {
+    const edges = await page.locator('tbody.combatant button.damage').evaluateAll((bs) => bs.map((b) => Math.round(b.getBoundingClientRect().right)))
+    assert.ok(edges.length >= 5 && edges.every((x) => x === edges[0]), `Dmg buttons end at ${edges}`)
+  }
+  await lined()
+  await rowExact('Adult Red Dragon').locator('button.link').click()
+  await page.locator('.monster-panel').waitFor()
+  await page.waitForTimeout(400)  // the table narrows as the panel slides in
+  await lined()
+  await shot('combat-rows-with-panel')
+  await page.getByRole('button', { name: 'Close panel' }).click()
 
   const next = () => page.getByRole('button', { name: /Next turn/ }).click()
   const alerts = page.locator('.turn-alerts')
@@ -120,7 +138,7 @@ export default async function ({ page, base, shot }) {
   assert.equal(await group.locator('.mode-switch button.selected', { hasText: 'Failed' }).count(), 3)
   await group.getByRole('button', { name: 'Apply' }).click()
   await page.waitForFunction(() => document.querySelectorAll('.chip.timed').length >= 3)
-  assert.equal(await page.locator('.chip', { hasText: 'Frightened · 2 rds' }).count(), 3)
+  assert.equal(await page.locator('.chip[title^="Frightened · 2 rds"]').count(), 3)
 
   // Concentration: damage waits for a Con save, which a monster can roll.
   await addCondition(row('Goblin Boss'), 'Concentrating')

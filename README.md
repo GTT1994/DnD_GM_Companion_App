@@ -39,11 +39,12 @@ A companion app for Game Masters running Dungeons & Dragons 5e. It starts as a t
 **Combat tracker**
 - **+ Add combatant** opens a form for players and custom monsters (leave Initiative blank to roll a d20; press Enter to add). It stays open for the next one until you close it with ✕, so the tracker shows just the fight
 - Turn order sorted by initiative, with a round counter and Previous / Next turn
-- Damage, healing and temporary HP (damage uses up temp HP first; HP stays between 0 and max)
-- Conditions from the SRD, plus Concentrating; hover a condition to read it, click it to remove it
+- **Two-line rows**: initiative, name, AC, HP and `[HP] [Dmg] [Heal] [⋯]` on top, in the same place on every row (panel open or not); resistance tags, conditions and **+ Condition** on the line underneath
+- Damage, healing and temporary HP (damage uses up temp HP first; HP stays between 0 and max). The **⋯** menu holds Set temp HP, the damage type for creatures with resistances, and Remove from combat
+- Conditions from the SRD, plus Concentrating: **+ Condition** opens a pop-up to pick one and how long it lasts. Chips are short ("Conc: Fly", "Res: Cold") with a duration badge (rounds left, ▸ until a turn, S save ends); hover for the full wording and rules, click to remove
 - **Condition durations**: until removed, a number of rounds, until the start or end of someone's next turn, or save ends. Conditions that run out are removed and listed above the tracker
 - **Saves waiting for you** above the tracker: "save ends" conditions at the end of the creature's turn, and Con saves when a concentrating creature takes damage. Monsters roll with their bonus; for PCs press Passed or Failed
-- **Resistances, immunities and vulnerabilities** from stat blocks (and PC sheets) show as tags on each row. Those rows get a damage type picker, so typed-in player damage is adjusted (½, ×2 or 0), with a **Magical** tick-box for "from nonmagical attacks". Temporary ones (Rage, Absorb Elements) are added from + Condition, and a warning shows for conditions a creature is immune to
+- **Resistances, immunities and vulnerabilities** from stat blocks (and PC sheets) show as tags on each row. Those rows get a damage type in the ⋯ menu (shown as a tag beside the HP box until the next hit), so typed-in player damage is adjusted (½, ×2 or 0), with a **Magical** tick-box for "from nonmagical attacks". Temporary ones (Rage, Absorb Elements) are added from + Condition, and a warning shows for conditions a creature is immune to
 - **Group save**: pick the ability, DC and targets (monsters roll, players tick their result), optionally roll damage once (half or none on a success) and add a condition to everyone who failed
 - **Start combat** asks for each player's initiative roll (or rolls a d20 for them); monsters roll their own
 - **Undo / Redo** (⌘Z / ⇧⌘Z) for the last 20 changes, named on hover, e.g. "Undo: 8 damage to Thorin". PC HP on the party cards follows

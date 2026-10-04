@@ -60,7 +60,7 @@ export default async function ({ page, base, shot }) {
   await shot('overview')
   await encounter.getByRole('button', { name: 'Load into combat' }).click()
   await page.waitForURL(/\/combat$/)
-  await page.locator('tr.combatant', { hasText: 'Goblin' }).waitFor()
+  await page.locator('tbody.combatant', { hasText: 'Goblin' }).waitFor()
   await page.getByRole('link', { name: 'Overview' }).click()
   await page.locator('.planned-encounters').getByText('No planned encounters').waitFor()  // now marked Used
 

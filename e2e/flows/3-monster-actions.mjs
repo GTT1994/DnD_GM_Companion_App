@@ -12,11 +12,11 @@ export default async function ({ page, base, shot }) {
   await page.goto(`${base}/quick-combat`)
   await addCombatant(page, { name: 'Thorin', initiative: 30, hp: 60, ac: 18 })
   await addCombatant(page, { name: 'Bandit', initiative: 1, hp: 11, ac: 12, player: false })
-  await page.locator('tr.combatant').nth(4).waitFor()
+  await page.locator('tbody.combatant').nth(4).waitFor()
 
   const panel = page.locator('.monster-panel')
   const card = (name) => panel.locator('.action-card', { has: page.locator('.action-title strong', { hasText: name }) }).first()
-  const open = (name) => page.locator('tr.combatant', { hasText: name }).locator('button.link').click()
+  const open = (name) => page.locator('tbody.combatant', { hasText: name }).locator('button.link').click()
 
   // The toolbar buttons stay exactly where they are when the panel opens (and closes).
   const toolbarBoxes = () => page.locator('.combat-top .toolbar-buttons > *').evaluateAll((els) => els.map((e) => {
@@ -53,7 +53,7 @@ export default async function ({ page, base, shot }) {
   await scimitar.locator('.apply-row select').selectOption(thorinOption)
   const damage = parseInt((await scimitar.locator('.apply-row button').first().innerText()).replace(/\D/g, ''))
   await scimitar.locator('.apply-row button').first().click()
-  await page.locator('tr.combatant', { hasText: 'Thorin' }).getByText(`${60 - damage} / 60`).waitFor()
+  await page.locator('tbody.combatant', { hasText: 'Thorin' }).getByText(`${60 - damage} / 60`).waitFor()
 
   // Dragon: recharge and legendary actions.
   await open('Adult Red Dragon')
@@ -74,8 +74,8 @@ export default async function ({ page, base, shot }) {
   await bolt.getByRole('button', { name: 'Lightning Bolt' }).click()
   assert.match(await bolt.locator('.damage-roller button.roll').innerText(), /10d6/)
   await panel.locator('.spell-row', { hasText: /^Fly/ }).first().getByRole('button', { name: 'Cast' }).click()
-  const archRow = page.locator('tr.combatant', { hasText: 'Archmage' })
-  await archRow.locator('.chip', { hasText: 'Concentrating: Fly' }).waitFor()
+  const archRow = page.locator('tbody.combatant', { hasText: 'Archmage' })
+  await archRow.locator('.chip', { hasText: 'Conc: Fly' }).waitFor()
   await archRow.locator('.amount-input').fill('30')
   await archRow.locator('.amount-input').press('Enter')
   await panel.locator('.roll-log li', { hasText: 'Con save DC 15' }).waitFor()
@@ -91,10 +91,10 @@ export default async function ({ page, base, shot }) {
   // Next turn opens the panel for whichever monster's turn it is. Thorin (initiative 30) goes
   // first; everyone after him is a monster, so the next turn is always a monster's.
   await startCombat(page)
-  await page.locator('tr.combatant.active', { hasText: 'Thorin' }).waitFor()
+  await page.locator('tbody.combatant.active', { hasText: 'Thorin' }).waitFor()
   await page.getByRole('button', { name: /Next turn/ }).click()
-  await page.waitForFunction(() => !document.querySelector('tr.combatant.active')?.textContent?.includes('Thorin'))
-  const active = await page.locator('tr.combatant.active button.link').innerText()
+  await page.waitForFunction(() => !document.querySelector('tbody.combatant.active')?.textContent?.includes('Thorin'))
+  const active = await page.locator('tbody.combatant.active button.link').innerText()
   await panel.locator('h2', { hasText: active }).waitFor()
   await shot('combat-with-panel')
 }
