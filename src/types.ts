@@ -25,7 +25,12 @@ export type Combatant = {
   legendaryMax?: number          // legendary actions per round (defaults to 3)
   lair?: Lair                    // set for a lair: its turn lists lair actions instead of HP and attacks
   inLair?: boolean               // a monster fighting in its lair (e.g. 4/Day Legendary Resistance instead of 3)
+  mini?: MiniLabel               // which miniature on the table it is, e.g. "with shield" on a blue base
 }
+
+// The GM's note of which mini is which monster: a description and/or a base colour.
+export type MiniColour = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'black' | 'white'
+export type MiniLabel = { text: string; colour?: MiniColour }
 
 // A lair in the turn order (usually initiative 20, losing ties), with its lair actions typed in by the GM.
 export type Lair = {

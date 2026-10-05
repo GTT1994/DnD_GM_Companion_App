@@ -8,6 +8,7 @@ import type { CombatAction } from '../lib/combat'
 import { rollToHit, type D20Mode } from '../lib/actions'
 import { rollDice, signed } from '../lib/dice'
 import type { GroupSavePreset } from '../lib/saves'
+import { displayName } from '../lib/minis'
 import { adjustmentLabel, adjustParts, type Adjusted, type Defense, type Defenses } from '../lib/resistances'
 
 // What every roll widget needs to know about the fight.
@@ -38,7 +39,7 @@ export function ToHit({ label, bonus, ctx, onRolled }: ToHitProps) {
     onRolled(r.natural === 20)
     const dice = r.rolls.length > 1 ? ` (rolled ${r.rolls.join(' & ')}, ${ctx.mode})` : ''
     const note = r.natural === 20 ? ' — critical hit!' : r.natural === 1 ? ' — natural 1, miss' : ''
-    ctx.log(`${ctx.self.name} · ${label}: ${r.total} to hit${dice}${note}`)
+    ctx.log(`${displayName(ctx.self)} · ${label}: ${r.total} to hit${dice}${note}`)
   }
 
   return (
@@ -84,7 +85,7 @@ export function DamageRoller({ label, parts, initialIncluded, crit, onUsedCrit, 
     setResult({ parts: rolled, total, crit: crit && !heal })
     onUsedCrit()
     const detail = rolled.map((r) => `${r.total} ${r.part.type}`.trim()).join(' + ')
-    ctx.log(`${ctx.self.name} · ${label}: ${total} ${heal ? 'healing' : 'damage'}${rolled.length > 1 ? ` (${detail})` : detail ? ` ${rolled[0].part.type}` : ''}${crit && !heal ? ' — critical' : ''}`)
+    ctx.log(`${displayName(ctx.self)} · ${label}: ${total} ${heal ? 'healing' : 'damage'}${rolled.length > 1 ? ` (${detail})` : detail ? ` ${rolled[0].part.type}` : ''}${crit && !heal ? ' — critical' : ''}`)
   }
 
   return (
@@ -142,14 +143,14 @@ function ApplyToTarget({ parts, allowHalf, heal, ctx }: { parts: { total: number
   function apply(r: Adjusted) {
     if (!target) return
     ctx.dispatch({ type: heal ? 'heal' : 'damage', id: target.id, amount: heal ? total : r.amount })
-    ctx.log(heal ? `Healed ${total} to ${target.name}` : `Applied ${r.amount} damage to ${target.name}${note(r)}`)
+    ctx.log(heal ? `Healed ${total} to ${displayName(target)}` : `Applied ${r.amount} damage to ${displayName(target)}${note(r)}`)
   }
 
   return (
     <div className="roll-row apply-row">
       <select value={targetId} onChange={(e) => setTargetId(e.target.value)} aria-label="Target">
         <option value="">Choose target…</option>
-        {everyone.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.hp}/{t.maxHp})</option>)}
+        {everyone.map((t) => <option key={t.id} value={t.id}>{displayName(t)} ({t.hp}/{t.maxHp})</option>)}
       </select>
       <button type="button" disabled={!target} onClick={() => apply(full)}>{heal ? `Heal ${total}` : `Apply ${full.amount}${note(full)}`}</button>
       {allowHalf && !heal && <button type="button" disabled={!target} onClick={() => apply(half)}>Half ({half.amount}{note(half)})</button>}

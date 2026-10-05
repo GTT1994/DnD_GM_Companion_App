@@ -17,6 +17,8 @@ import { SpellcastingCard } from './SpellcastingCard'
 import { FeatureUsage, UsePips } from './UseTracking'
 import { MobAttack } from './MobAttack'
 import { creatures, inLairTimes } from '../lib/lair'
+import { displayName } from '../lib/minis'
+import { MiniBadge } from './MiniLabel'
 
 type MonsterPanelProps = {
   combatant: Combatant
@@ -59,6 +61,7 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
       <header className="panel-header">
         <div>
           <h2>{combatant.name}</h2>
+          {combatant.mini && <p className="meta mini-line">Mini: <MiniBadge mini={combatant.mini} /></p>}
           <p className="meta">
             AC {combatant.ac} · HP {combatant.hp}/{combatant.maxHp}
             {monster && <> · <button type="button" className="link" onClick={onOpenStatBlock}>Full stat block</button></>}
@@ -244,7 +247,7 @@ function LegendarySection({ features, ctx }: { features: Feature[]; ctx: RollCon
               left: max - used,
               onUse: () => {
                 setUsed(used + cost)
-                ctx.log(`${ctx.self.name} uses legendary action: ${f.name}`)
+                ctx.log(`${displayName(ctx.self)} uses legendary action: ${f.name}`)
               },
             }}
           />
@@ -263,7 +266,7 @@ function SavingThrows({ monster, ctx }: { monster: Monster; ctx: RollContext }) 
     const r = rollSave(bonus, 0, ctx.mode)
     const detail = `${r.rolls.length > 1 ? `${r.rolls.join(' & ')} → ` : ''}${r.natural} ${signed(bonus)}`
     setLast({ ability, total: r.total, detail })
-    ctx.log(`${ctx.self.name} · ${ability} save: ${r.total} (${detail}${ctx.mode !== 'normal' ? `, ${ctx.mode}` : ''})`)
+    ctx.log(`${displayName(ctx.self)} · ${ability} save: ${r.total} (${detail}${ctx.mode !== 'normal' ? `, ${ctx.mode}` : ''})`)
   }
 
   return (

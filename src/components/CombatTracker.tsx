@@ -18,6 +18,7 @@ import { MoreMenu } from './MoreMenu'
 import { LairForm } from './LairForm'
 import { LairPanel } from './LairPanel'
 import { newLair } from '../lib/lair'
+import { MiniBadge } from './MiniLabel'
 import type { GroupSavePreset } from '../lib/saves'
 
 const PANEL_ANIMATION_MS = 250  // how long the panel takes to slide in or out (matches the CSS)
@@ -106,7 +107,7 @@ export function CombatTracker({ combat, dispatch, edition, onOpenMonster, onAddP
       <div className="combat-top" ref={toolbarRef}>
         <div className="toolbar">
           <div className="round">
-            {combat.round === 0 ? 'Not started' : <>Round <strong>{combat.round}</strong>{active && <> · {active.name}'s turn</>}</>}
+            {combat.round === 0 ? 'Not started' : <>Round <strong>{combat.round}</strong>{active && <> · {active.name}{active.mini && <> (<MiniBadge mini={active.mini} />)</>}'s turn</>}</>}
           </div>
           <div className="toolbar-buttons">
             <button type="button" className={adding ? 'selected' : ''} onClick={() => setAddChoice(!adding)} aria-expanded={adding}>+ Add combatant</button>

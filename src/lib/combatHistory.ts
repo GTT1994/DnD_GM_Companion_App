@@ -56,6 +56,8 @@ export function describeAction(action: CombatAction, before: CombatState): strin
       return `${name(action.id)} action`
     case 'setInLair':
       return `${name(action.id)} ${action.inLair ? 'in' : 'out of'} lair`
+    case 'setMini':
+      return `${name(action.id)} mini label`
     case 'batch':
       return action.label ?? 'several changes'
     case 'log':

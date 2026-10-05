@@ -2,6 +2,7 @@
 // how a timer is described on its chip. Used by the combat reducer (combat.ts).
 
 import type { Ability, CombatState, Combatant, ConditionTimer, PendingSave } from '../types'
+import { displayName } from './minis'
 
 // The result of a turn change: the updated fight, and lines to show the GM.
 type Step = { state: CombatState; notices: string[] }
@@ -79,7 +80,7 @@ export function startOfTurn(state: CombatState, ownerId: string): Step {
   for (const c of state.combatants) {
     for (const [condition, timer] of Object.entries(c.timers ?? {})) {
       if (timer.kind === 'turn' && timer.when === 'start' && timer.ownerId === ownerId) {
-        notices.push(`${c.name} is no longer ${condition}`)
+        notices.push(`${displayName(c)} is no longer ${condition}`)
         next = removeCondition(next, c.id, condition)
       }
     }
@@ -102,7 +103,7 @@ export function forgetRemoved(state: CombatState): CombatState {
   }
 }
 
-const nameOf = (state: CombatState, id: string) => state.combatants.find((c) => c.id === id)?.name ?? 'Someone'
+const nameOf = (state: CombatState, id: string) => { const c = state.combatants.find((x) => x.id === id); return c ? displayName(c) : 'Someone' }
 
 // Short text for a condition chip, e.g. "2 rds", "end of Thorin's turn", "Wis 15 ends".
 export function timerLabel(timer: ConditionTimer, self: Combatant, combatants: Combatant[]): string {
@@ -110,7 +111,8 @@ export function timerLabel(timer: ConditionTimer, self: Combatant, combatants: C
     case 'rounds':
       return `${timer.rounds} rd${timer.rounds === 1 ? '' : 's'}`
     case 'turn': {
-      const owner = timer.ownerId === self.id ? 'its' : `${combatants.find((c) => c.id === timer.ownerId)?.name ?? '?'}'s`
+      const ownerC = combatants.find((c) => c.id === timer.ownerId)
+      const owner = timer.ownerId === self.id ? 'its' : `${ownerC ? displayName(ownerC) : '?'}'s`
       return `${timer.when} of ${owner} turn`
     }
     case 'save':

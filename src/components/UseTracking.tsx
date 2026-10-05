@@ -4,6 +4,7 @@
 import type { Feature } from '../data/srd'
 import { featureKey } from '../lib/actions'
 import { inLairTimes } from '../lib/lair'
+import { displayName } from '../lib/minis'
 import { rollDie } from '../lib/dice'
 import type { RollContext } from './RollWidgets'
 
@@ -61,7 +62,7 @@ export function FeatureUsage({ feature, ctx }: { feature: Feature; ctx: RollCont
             const d6 = rollDie(6)
             const recharged = d6 >= usage.min
             if (recharged) setUsed(0)
-            ctx.log(`${ctx.self.name} · ${feature.name}: rolled ${d6} — ${recharged ? 'recharged!' : 'not recharged'}`)
+            ctx.log(`${displayName(ctx.self)} · ${feature.name}: rolled ${d6} — ${recharged ? 'recharged!' : 'not recharged'}`)
           }}
         >
           Roll recharge

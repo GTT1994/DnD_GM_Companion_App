@@ -8,6 +8,7 @@ import { useState, type Dispatch } from 'react'
 import type { Ability, CombatState } from '../types'
 import type { CombatAction } from '../lib/combat'
 import { creatures } from '../lib/lair'
+import { displayName } from '../lib/minis'
 import type { D20Mode } from '../lib/actions'
 import { useMonsterLookup } from '../data/srd'
 import { sortByInitiative } from '../lib/combat'
@@ -50,7 +51,7 @@ export function GroupSave({ preset, combat, conditionNames, dispatch, onClose }:
   const damageValid = damage.trim() === '' || parseDice(damage) !== null
   const timer = condition ? toTimer(duration) : undefined
   const canRoll = dcValue > 0 && targets.length > 0 && damageValid && timer !== null
-  const nameOf = (id: string) => combat.combatants.find((c) => c.id === id)?.name ?? '?'
+  const nameOf = (id: string) => { const c = combat.combatants.find((x) => x.id === id); return c ? displayName(c) : '?' }
 
   function toggleTarget(id: string, on: boolean) {
     setTargets(on ? [...targets, id] : targets.filter((t) => t !== id))
@@ -166,7 +167,7 @@ export function GroupSave({ preset, combat, conditionNames, dispatch, onClose }:
             {order.map((c) => (
               <label key={c.id} className="checkbox target-chip">
                 <input type="checkbox" checked={targets.includes(c.id)} onChange={(e) => toggleTarget(c.id, e.target.checked)} />
-                {c.name}
+                {displayName(c)}
               </label>
             ))}
           </div>

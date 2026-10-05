@@ -3,7 +3,7 @@
 // line underneath has its resistance tags, conditions and "+ Condition". The ⋯ menu holds temp HP,
 // the damage type (for creatures with resistances, so typed-in damage is adjusted) and Remove.
 
-import { useState, type Dispatch } from 'react'
+import { useRef, useState, type Dispatch } from 'react'
 import type { Combatant } from '../types'
 import type { CombatAction } from '../lib/combat'
 import { shortConditionName, timerBadge, timerLabel } from '../lib/conditions'
@@ -13,6 +13,9 @@ import {
 } from '../lib/resistances'
 import { ConditionPicker } from './ConditionPicker'
 import { RowMenu } from './RowMenu'
+import { MiniBadge, MiniLabelForm } from './MiniLabel'
+import { Popover } from './Popover'
+import { anchorTo, type Anchor } from '../lib/popover'
 
 type CombatantRowProps = {
   combatant: Combatant
@@ -61,6 +64,11 @@ export function CombatantRow({ combatant: c, isActive, isSelected, conditionName
     const initiative = parseInt(text)
     if (!Number.isNaN(initiative) && initiative !== c.initiative) dispatch({ type: 'setInitiative', id: c.id, initiative })
   }
+
+  // The mini label pop-up (✎ by the name, or Mini label… in the ⋯ menu), anchored to the ✎ button.
+  const miniButton = useRef<HTMLButtonElement>(null)
+  const [miniAt, setMiniAt] = useState<Anchor | null>(null)
+  const openMini = () => setMiniAt(anchorTo(miniButton.current!, 'left'))
 
   // Opens the actions panel (monsters and lairs) from the name.
   const nameButton = (title: string) => <button type="button" className="link" onClick={onSelect} title={title}>{c.name}</button>
@@ -114,6 +122,25 @@ export function CombatantRow({ combatant: c, isActive, isSelected, conditionName
         <td className="name-cell">
           {/* Monsters' names open their actions panel */}
           {!c.isPlayer ? nameButton('Show actions') : c.name}
+          {/* Which mini on the table it is (monsters only; players know their own) */}
+          {c.mini && <MiniBadge mini={c.mini} />}
+          {!c.isPlayer && (
+            <button
+              ref={miniButton}
+              type="button"
+              className={`mini-edit ${miniAt ? 'selected' : ''}`}
+              aria-label={`Mini label for ${c.name}`}
+              title="Which mini is this?"
+              onClick={() => (miniAt ? setMiniAt(null) : openMini())}
+            >
+              ✎
+            </button>
+          )}
+          {miniAt && (
+            <Popover at={miniAt} align="left" label={`Mini label for ${c.name}`} className="mini-popover" opener={miniButton} onClose={() => setMiniAt(null)}>
+              <MiniLabelForm name={c.name} initial={c.mini} onSave={(mini) => dispatch({ type: 'setMini', id: c.id, mini })} onClose={() => setMiniAt(null)} />
+            </Popover>
+          )}
           <span className="tag">{c.isPlayer ? 'PC' : 'NPC'}</span>
         </td>
         <td className="ac">{c.ac}</td>
@@ -174,6 +201,7 @@ export function CombatantRow({ combatant: c, isActive, isSelected, conditionName
                       )}
                     </div>
                   )}
+                  {!c.isPlayer && <button type="button" onClick={() => { close(); openMini() }}>Mini label…</button>}
                   {removeItem(close)}
                 </>
               )}

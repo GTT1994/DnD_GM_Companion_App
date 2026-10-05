@@ -10,6 +10,7 @@ import { abilityMod, signed } from '../lib/dice'
 import { toAbility } from '../lib/saves'
 import { Markdown } from './Markdown'
 import { DamageRoller, ToHit, type RollContext } from './RollWidgets'
+import { displayName } from '../lib/minis'
 import { FeatureUsage, UsePips } from './UseTracking'
 
 const ABILITIES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
@@ -130,7 +131,7 @@ function SpellRow({ ms, spell, sc, featureName, monster, ctx, expanded, onToggle
     }
     if (spell?.concentration) ctx.dispatch({ type: 'concentrate', id: ctx.self.id, spell: ms.name })
     const level = usesSlot && castLevel > ms.level ? ` at ${ordinal(castLevel)} level` : ''
-    ctx.log(`${ctx.self.name} casts ${ms.name}${level}${spell?.concentration ? ' (concentration)' : ''}`)
+    ctx.log(`${displayName(ctx.self)} casts ${ms.name}${level}${spell?.concentration ? ' (concentration)' : ''}`)
   }
 
   const damageDice = spell ? spellDamageDice(spell, castLevel, sc.level) : undefined

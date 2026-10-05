@@ -1602,3 +1602,20 @@ button.dice-link:hover { background: var(--panel-raised); }
 .scale-table th[scope='row'] { text-align: left; font-weight: 600; white-space: nowrap; }
 .scale-table tr.changed td:last-child { color: var(--gold-bright); }
 .scale-monster details .stat-block { margin-top: 0.6rem; }
+
+/* Mini labels: which miniature on the table is which monster */
+.mini-badge { display: inline-flex; align-items: center; gap: 0.3em; margin-left: 0.45em; font-weight: 400; font-size: 0.85rem; color: var(--text-dim); vertical-align: middle; }
+.mini-dot { width: 0.8em; height: 0.8em; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.35); flex: none; }
+.mini-text { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-style: italic; }
+.with-panel .mini-text { max-width: 6rem; }
+/* ✎ beside the name: faint until you point at the row */
+.mini-edit { margin-left: 0.3em; padding: 0 0.3em; font-size: 0.8rem; line-height: 1.3; border-color: transparent; background: transparent; color: var(--text-dim); opacity: 0; }
+.combatant:hover .mini-edit, .mini-edit:focus-visible, .mini-edit.selected { opacity: 1; }
+.mini-popover { min-width: 16rem; }
+.mini-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.mini-colours { display: flex; gap: 0.35rem; }
+.mini-colour { width: 1.5rem; height: 1.5rem; padding: 0; border-radius: 50%; border: 2px solid var(--border); }
+.mini-colour.selected { border-color: var(--gold-bright); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold-bright); }
+.panel-header .mini-badge { margin-left: 0; }
+/* In the "Guard 2 (● with shield)'s turn" line: plain text, no gap after the bracket */
+.round .mini-badge { margin-left: 0; font-family: var(--sans); font-size: 0.95rem; text-transform: none; letter-spacing: 0; color: var(--text); }

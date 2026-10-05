@@ -8,6 +8,7 @@ import type { CombatAction } from '../lib/combat'
 import { useMonsterLookup } from '../data/srd'
 import { rollSave, saveBonus } from '../lib/saves'
 import { signed } from '../lib/dice'
+import { displayName } from '../lib/minis'
 
 type TurnAlertsProps = {
   combat: CombatState
@@ -36,7 +37,7 @@ export function TurnAlerts({ combat, dispatch }: TurnAlertsProps) {
           <SaveRow
             key={save.id}
             save={save}
-            name={target.name}
+            name={displayName(target)}
             // Monsters with a stat block roll; PCs and hand-added creatures are asked.
             bonus={monster && !target.isPlayer ? saveBonus(monster, save.ability) : undefined}
             dispatch={dispatch}

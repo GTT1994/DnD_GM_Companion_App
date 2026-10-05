@@ -10,6 +10,7 @@ import { ABILITIES } from '../lib/saves'
 import { DAMAGE_TYPES } from '../lib/homebrew'
 import { DEFENSE_LABELS, DEFENSES, temporaryCondition, type Defense } from '../lib/resistances'
 import { anchorTo, type Anchor } from '../lib/popover'
+import { displayName } from '../lib/minis'
 import { Popover } from './Popover'
 
 type DurationFieldsProps = {
@@ -36,7 +37,7 @@ export function DurationFields({ value, onChange, combatants, selfId }: Duration
       )}
       {(value.kind === 'start' || value.kind === 'end') && (
         <select value={value.ownerId} onChange={(e) => set({ ownerId: e.target.value })} aria-label="Whose turn">
-          {combatants.map((c) => <option key={c.id} value={c.id}>{c.id === selfId ? `its own (${c.name})` : `${c.name}'s`} next turn</option>)}
+          {combatants.map((c) => <option key={c.id} value={c.id}>{c.id === selfId ? `its own (${displayName(c)})` : `${displayName(c)}'s`} next turn</option>)}
         </select>
       )}
       {value.kind === 'save' && (

@@ -8,6 +8,7 @@ import { defaultIncluded } from '../lib/actions'
 import { attackersPerHit, mobAttack, type MobResult } from '../lib/mob'
 import { adjustmentLabel, adjustParts } from '../lib/resistances'
 import type { RollContext } from './RollWidgets'
+import { displayName } from '../lib/minis'
 
 type MobAttackProps = {
   feature: Feature & { attack: number }
@@ -40,7 +41,7 @@ export function MobAttack({ feature, ctx, mobSize }: MobAttackProps) {
       label: `mob attack on ${target.name}`,
       actions: [
         { type: 'damage', id: target.id, amount: adjusted.amount },
-        { type: 'log', entry: { id: crypto.randomUUID(), text: `${result.attackers} × ${base} mob-attack ${target.name} (${feature.name}): ${result.hits} hit${result.hits === 1 ? '' : 's'}, ${adjusted.amount} damage${note}` } },
+        { type: 'log', entry: { id: crypto.randomUUID(), text: `${result.attackers} × ${base} mob-attack ${displayName(target)} (${feature.name}): ${result.hits} hit${result.hits === 1 ? '' : 's'}, ${adjusted.amount} damage${note}` } },
       ],
     })
     setResult(null)
@@ -55,7 +56,7 @@ export function MobAttack({ feature, ctx, mobSize }: MobAttackProps) {
         </label>
         <select value={targetId} onChange={(e) => { setTargetId(e.target.value); setResult(null) }} aria-label="Mob target">
           <option value="">Choose target…</option>
-          {ctx.targets.map((t) => <option key={t.id} value={t.id}>{t.name} (AC {t.ac})</option>)}
+          {ctx.targets.map((t) => <option key={t.id} value={t.id}>{displayName(t)} (AC {t.ac})</option>)}
         </select>
         <button type="button" className="remove" onClick={() => { setOpen(false); setResult(null) }} aria-label="Close mob attack">✕</button>
       </div>

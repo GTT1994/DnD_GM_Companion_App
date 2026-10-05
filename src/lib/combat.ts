@@ -3,7 +3,8 @@
 // procedure that takes the table and a command, and returns the updated table.
 // It never edits the old state, so React can tell something changed.
 
-import type { CombatState, Combatant, ConditionTimer, LogEntry } from '../types'
+import type { CombatState, Combatant, ConditionTimer, LogEntry, MiniLabel } from '../types'
+import { displayName } from './minis'
 import { concentrationDc, LEGENDARY_KEY } from './actions'
 import { addCondition, endOfTurn, forgetRemoved, removeCondition, startOfTurn } from './conditions'
 
@@ -34,6 +35,7 @@ export type CombatAction =
   | { type: 'setLair'; id: string; name: string; initiative: number; actions: string[] }  // edit a lair
   | { type: 'useLairAction'; id: string; index: number | null }       // tick the lair action used this round (null = untick)
   | { type: 'setInLair'; id: string; inLair: boolean }
+  | { type: 'setMini'; id: string; mini: MiniLabel | null }           // which mini on the table it is (null = none)
 
 const LOG_LENGTH = 10       // how many rolls the history keeps
 const CONCENTRATING = 'Concentrating'
@@ -79,7 +81,7 @@ function damage(state: CombatState, id: string, amount: number): CombatState {
   }
   return addLog(withSave, {
     id: crypto.randomUUID(),
-    text: `${target.name} took ${amount} damage while concentrating on ${concentrating.split(': ')[1] ?? 'a spell'}: Con save DC ${dc} to keep it`,
+    text: `${displayName(target)} took ${amount} damage while concentrating on ${concentrating.split(': ')[1] ?? 'a spell'}: Con save DC ${dc} to keep it`,
   })
 }
 
@@ -96,7 +98,7 @@ function resolveSave(state: CombatState, saveId: string, passed: boolean, detail
     : (passed ? 'keeps concentrating' : `loses concentration on ${save.condition.split(': ')[1] ?? 'the spell'}`)
   return addLog(next, {
     id: crypto.randomUUID(),
-    text: `${target.name} ${passed ? 'makes' : 'fails'} the ${save.ability} save (DC ${save.dc}${detail ? `, rolled ${detail}` : ''}): ${outcome}`,
+    text: `${displayName(target)} ${passed ? 'makes' : 'fails'} the ${save.ability} save (DC ${save.dc}${detail ? `, rolled ${detail}` : ''}): ${outcome}`,
   })
 }
 
@@ -272,6 +274,8 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
     }
     case 'setInLair':
       return updateOne(state, action.id, (c) => ({ ...c, inLair: action.inLair }))
+    case 'setMini':
+      return updateOne(state, action.id, (c) => ({ ...c, mini: action.mini ?? undefined }))
   }
 }
 
