@@ -11,6 +11,7 @@ import { toAbility } from '../lib/saves'
 import { Markdown } from './Markdown'
 import { DamageRoller, ToHit, type RollContext } from './RollWidgets'
 import { displayName } from '../lib/minis'
+import { castingTimeOf } from '../lib/lookupFilters'
 import { FeatureUsage, UsePips } from './UseTracking'
 
 const ABILITIES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
@@ -122,6 +123,8 @@ function SpellRow({ ms, spell, sc, featureName, monster, ctx, expanded, onToggle
   // The level the spell is cast at: the chosen slot (if still available), otherwise its own level.
   const castLevel = usesSlot && slotLevels.includes(slotLevel) ? slotLevel : usesSlot ? (slotLevels[0] ?? ms.level) : ms.level
   const outOfUses = (typeof ms.usage === 'number' && perDayUsed >= ms.usage) || (usesSlot && slotLevels.length === 0)
+  // Reaction spells (Shield, Counterspell) use up the caster's reaction; still castable if it's gone, with a warning.
+  const isReaction = !!spell && castingTimeOf(spell) === 'reaction'
 
   function cast() {
     if (usesSlot) {
@@ -130,8 +133,9 @@ function SpellRow({ ms, spell, sc, featureName, monster, ctx, expanded, onToggle
       ctx.dispatch({ type: 'setUse', id: ctx.self.id, key: perDayKey, used: perDayUsed + 1 })
     }
     if (spell?.concentration) ctx.dispatch({ type: 'concentrate', id: ctx.self.id, spell: ms.name })
+    if (isReaction) ctx.dispatch({ type: 'setReaction', id: ctx.self.id, used: true })
     const level = usesSlot && castLevel > ms.level ? ` at ${ordinal(castLevel)} level` : ''
-    ctx.log(`${displayName(ctx.self)} casts ${ms.name}${level}${spell?.concentration ? ' (concentration)' : ''}`)
+    ctx.log(`${displayName(ctx.self)} casts ${ms.name}${level}${spell?.concentration ? ' (concentration)' : ''}${isReaction ? ' (reaction)' : ''}`)
   }
 
   const damageDice = spell ? spellDamageDice(spell, castLevel, sc.level) : undefined
@@ -163,7 +167,8 @@ function SpellRow({ ms, spell, sc, featureName, monster, ctx, expanded, onToggle
               {slotLevels.map((l) => <option key={l} value={l}>{ordinal(l)}</option>)}
             </select>
           )}
-          <button type="button" className="small" onClick={cast} disabled={outOfUses} title={outOfUses ? 'No uses or slots left' : undefined}>
+          {isReaction && ctx.self.reactionUsed && <span className="field-error">Reaction already used</span>}
+          <button type="button" className="small" onClick={cast} disabled={outOfUses} title={outOfUses ? 'No uses or slots left' : isReaction ? 'Uses its reaction' : undefined}>
             Cast
           </button>
         </span>

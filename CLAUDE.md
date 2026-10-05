@@ -31,6 +31,7 @@ A DnD 5e companion app for Game Masters, for personal use on a laptop. See [READ
 - `src/lib/lair.ts`: lairs in the fight (a combatant with `lair` set: no HP, `LairPanel` instead of `MonsterPanel`, excluded from targets via `creatures()`) and in-lair use counts; `mob.ts` for the DMG mob attack table (`components/MobAttack.tsx`)
 - `src/lib/scaleMonster.ts`: Scale CR (the DMG stats-by-CR table; numbers move by the difference between rows, HP and damage by the ratio); `components/ScaleMonster.tsx` is the panel in Quick Lookup
 - Combat tracker rows (`CombatantRow.tsx`) are a `<tbody class="combatant">` each, with two lines; e2e tests find rows with `tbody.combatant`. Pop-ups (`Popover.tsx`, used by `RowMenu` ⋯ and `ConditionPicker`) are fixed to the screen so the table's scroll box can't clip them
+- Reactions: `Combatant.reactionUsed`, set by `setReaction` and cleared in `combat.ts` `startTurn` (with legendary actions), End combat and Reset combat
 - `src/lib/minis.ts`: mini labels (which physical mini a monster is); use `displayName(c)` for a combatant's name in lists, notices and log lines. `components/MiniLabel.tsx` has the badge and the ✎ form
 - `src/lib/conditions.ts`: condition timers (run by `combatReducer` on each turn change) and the duration form; `saves.ts` for save bonuses, rolls and damage after a save
 - `src/lib/encounters.ts`: encounter difficulty (2014 thresholds/multipliers, 2024 budgets) and loading encounters into combat

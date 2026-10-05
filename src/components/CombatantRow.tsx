@@ -215,6 +215,17 @@ export function CombatantRow({ combatant: c, isActive, isSelected, conditionName
         <td />
         <td colSpan={4}>
           <div className="row-extras">
+            {/* The reaction: press when used; it clears itself when this creature's turn starts */}
+            <button
+              type="button"
+              className={`reaction-toggle ${c.reactionUsed ? 'used' : ''}`}
+              aria-pressed={!!c.reactionUsed}
+              aria-label={c.reactionUsed ? `Reaction used by ${c.name}` : `Mark ${c.name}'s reaction as used`}
+              title={c.reactionUsed ? 'Reaction used. Comes back at the start of its turn (click to undo)' : 'Mark the reaction as used'}
+              onClick={() => dispatch({ type: 'setReaction', id: c.id, used: !c.reactionUsed })}
+            >
+              ⟲ {c.reactionUsed ? 'Reaction used' : 'Reaction'}
+            </button>
             {hasDamageDefenses(defenses) && defenseTags(defenses).map((t) => (
               <span key={t.kind} className={`tag defense-tag ${t.kind}`} title={t.title}>{t.text}</span>
             ))}

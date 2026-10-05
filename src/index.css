@@ -1619,3 +1619,9 @@ button.dice-link:hover { background: var(--panel-raised); }
 .panel-header .mini-badge { margin-left: 0; }
 /* In the "Guard 2 (● with shield)'s turn" line: plain text, no gap after the bracket */
 .round .mini-badge { margin-left: 0; font-family: var(--sans); font-size: 0.95rem; text-transform: none; letter-spacing: 0; color: var(--text); }
+
+/* The reaction button at the start of each row's second line: faint until used */
+.reaction-toggle { font-size: 0.75rem; padding: 0.05em 0.5em; border-radius: 999px; color: var(--text-dim); border-style: dashed; opacity: 0.45; }
+.combatant:hover .reaction-toggle, .reaction-toggle:focus-visible { opacity: 1; }
+.reaction-toggle.used { opacity: 1; border-style: solid; border-color: #7fb0d6; background: rgba(127, 176, 214, 0.15); color: #a9cbe6; }
+.tag.reaction-tag { border-color: #7fb0d6; color: #a9cbe6; }

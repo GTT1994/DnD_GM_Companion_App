@@ -64,6 +64,7 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
           {combatant.mini && <p className="meta mini-line">Mini: <MiniBadge mini={combatant.mini} /></p>}
           <p className="meta">
             AC {combatant.ac} · HP {combatant.hp}/{combatant.maxHp}
+            {combatant.reactionUsed && <span className="tag reaction-tag">Reaction used</span>}
             {monster && <> · <button type="button" className="link" onClick={onOpenStatBlock}>Full stat block</button></>}
           </p>
         </div>
@@ -102,7 +103,7 @@ export function MonsterPanel({ combatant, combat, dispatch, onClose, onOpenStatB
           <FeatureSection title="Spellcasting" features={spellTraits} render={(f) => <SpellcastingCard feature={f as SpellFeature} monster={monster} spells={spells} ctx={ctx} />} />
           <FeatureSection title="Actions" features={monster.actions} render={(f) => renderFeature(f, mobSize)} />
           <FeatureSection title="Bonus Actions" features={monster.bonusActions} render={(f) => renderFeature(f)} />
-          <FeatureSection title="Reactions" features={monster.reactions} render={(f) => renderFeature(f)} />
+          <FeatureSection title="Reactions" features={monster.reactions} render={(f) => <ActionCard feature={f} ctx={ctx} reaction />} />
           {monster.legendaryActions?.length ? <LegendarySection features={monster.legendaryActions} ctx={ctx} /> : null}
           {otherTraits.length > 0 && (
             <details className="traits">
@@ -144,10 +145,11 @@ type ActionCardProps = {
   ctx: RollContext
   legendary?: { cost: number; left: number; onUse: () => void }  // set for legendary actions
   mobSize?: number  // how many of this monster are standing; 2+ offers Mob attack on attacks
+  reaction?: boolean  // set for the Reactions section: Use marks the creature's reaction as used
 }
 
 // One trait or action: its limits, to-hit and damage rolls, and description.
-function ActionCard({ feature, ctx, legendary, mobSize = 0 }: ActionCardProps) {
+function ActionCard({ feature, ctx, legendary, mobSize = 0, reaction }: ActionCardProps) {
   const [crit, setCrit] = useState(false)  // the last to-hit roll was a natural 20
   const hasRolls = feature.attack !== undefined || !!feature.damage?.length
 
@@ -156,6 +158,19 @@ function ActionCard({ feature, ctx, legendary, mobSize = 0 }: ActionCardProps) {
       <div className="action-title">
         <strong>{feature.name}</strong>
         <FeatureUsage feature={feature} ctx={ctx} />
+        {reaction && (
+          <button
+            type="button"
+            className="small"
+            disabled={ctx.self.reactionUsed}
+            onClick={() => {
+              ctx.dispatch({ type: 'setReaction', id: ctx.self.id, used: true })
+              ctx.log(`${displayName(ctx.self)} uses ${stripUsageLabel(feature.name)} (reaction)`)
+            }}
+          >
+            {ctx.self.reactionUsed ? 'Reaction used' : 'Use'}
+          </button>
+        )}
         {legendary && (
           <button type="button" className="small" disabled={legendary.left < legendary.cost} onClick={legendary.onUse}>
             Use{legendary.cost > 1 ? ` (${legendary.cost})` : ''}

@@ -222,3 +222,29 @@ describe('reset and restore', () => {
     expect(restored.log?.map((e) => e.text)).toEqual(['Undid: 4 damage to a', 'Goblin rolls 17 to hit'])
   })
 })
+
+describe('reactions', () => {
+  const used = (state: CombatState, id: string) => !!state.combatants.find((x) => x.id === id)!.reactionUsed
+
+  it('stays used until the start of its own next turn', () => {
+    // a's turn: b uses its reaction (e.g. an opportunity attack).
+    let state = combatReducer(started, { type: 'setReaction', id: 'b', used: true })
+    expect(used(state, 'b')).toBe(true)
+    // b's turn is next: when it starts, the reaction comes back; c's stays used until c's turn.
+    state = combatReducer(state, { type: 'setReaction', id: 'c', used: true })
+    state = combatReducer(state, { type: 'nextTurn' })  // b's turn starts
+    expect(used(state, 'b')).toBe(false)
+    expect(used(state, 'c')).toBe(true)
+    state = combatReducer(state, { type: 'nextTurn' })  // c's turn starts
+    expect(used(state, 'c')).toBe(false)
+  })
+
+  it('can be unmarked, and is cleared by Reset combat', () => {
+    let state = combatReducer(started, { type: 'setReaction', id: 'a', used: true })
+    state = combatReducer(state, { type: 'setReaction', id: 'a', used: false })
+    expect(used(state, 'a')).toBe(false)
+    state = combatReducer(state, { type: 'setReaction', id: 'c', used: true })
+    state = combatReducer(state, { type: 'resetCombat' })
+    expect(used(state, 'c')).toBe(false)
+  })
+})

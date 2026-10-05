@@ -36,6 +36,7 @@ export type CombatAction =
   | { type: 'useLairAction'; id: string; index: number | null }       // tick the lair action used this round (null = untick)
   | { type: 'setInLair'; id: string; inLair: boolean }
   | { type: 'setMini'; id: string; mini: MiniLabel | null }           // which mini on the table it is (null = none)
+  | { type: 'setReaction'; id: string; used: boolean }               // mark (or unmark) its reaction as used
 
 const LOG_LENGTH = 10       // how many rolls the history keeps
 const CONCENTRATING = 'Concentrating'
@@ -134,9 +135,9 @@ function setUse(c: Combatant, key: string, used: number): Combatant {
   return { ...c, uses }
 }
 
-// Legendary actions come back at the start of the creature's turn.
+// Legendary actions and the reaction come back at the start of the creature's turn.
 function startTurn(state: CombatState): CombatState {
-  return state.activeId ? updateOne(state, state.activeId, (c) => setUse(c, LEGENDARY_KEY, 0)) : state
+  return state.activeId ? updateOne(state, state.activeId, (c) => ({ ...setUse(c, LEGENDARY_KEY, 0), reactionUsed: undefined })) : state
 }
 
 // Applies a change to the one combatant with the given ID, leaving the others unchanged.
@@ -217,7 +218,7 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
       // Keep everyone, but reset the round counter, conditions, legendary actions, waiting saves and
       // roll history. Daily uses and spell slots are kept: they only come back after a rest.
       return {
-        combatants: state.combatants.map((c) => ({ ...freshLair(setUse(c, LEGENDARY_KEY, 0)), conditions: [], timers: {} })),
+        combatants: state.combatants.map((c) => ({ ...freshLair(setUse(c, LEGENDARY_KEY, 0)), conditions: [], timers: {}, reactionUsed: undefined })),
         round: 0,
         activeId: null,
         log: [],
@@ -228,7 +229,7 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
       // Everyone back to full HP with no conditions, and every limited use restored; same people,
       // same initiative, round not started.
       return {
-        combatants: state.combatants.map((c) => ({ ...freshLair(c), hp: c.maxHp, tempHp: 0, conditions: [], timers: {}, uses: {} })),
+        combatants: state.combatants.map((c) => ({ ...freshLair(c), hp: c.maxHp, tempHp: 0, conditions: [], timers: {}, uses: {}, reactionUsed: undefined })),
         round: 0,
         activeId: null,
         log: [],
@@ -274,6 +275,8 @@ export function combatReducer(state: CombatState, action: CombatAction): CombatS
     }
     case 'setInLair':
       return updateOne(state, action.id, (c) => ({ ...c, inLair: action.inLair }))
+    case 'setReaction':
+      return updateOne(state, action.id, (c) => ({ ...c, reactionUsed: action.used || undefined }))
     case 'setMini':
       return updateOne(state, action.id, (c) => ({ ...c, mini: action.mini ?? undefined }))
   }

@@ -26,6 +26,7 @@ export type Combatant = {
   lair?: Lair                    // set for a lair: its turn lists lair actions instead of HP and attacks
   inLair?: boolean               // a monster fighting in its lair (e.g. 4/Day Legendary Resistance instead of 3)
   mini?: MiniLabel               // which miniature on the table it is, e.g. "with shield" on a blue base
+  reactionUsed?: boolean         // used its reaction since its last turn started (cleared when its turn starts)
 }
 
 // The GM's note of which mini is which monster: a description and/or a base colour.
